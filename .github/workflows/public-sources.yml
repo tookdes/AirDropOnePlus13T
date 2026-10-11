@@ -1,0 +1,76 @@
+name: Fetch locked public build inputs
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/public-sources.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: op13t-public-inputs-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fetch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: common
+            url: https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8750.git
+            commit: 5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143
+            sparse: ''
+          - name: op13t
+            url: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750.git
+            commit: 6a196f79f77acd55cf302e1696c038e4cad99254
+            sparse: ''
+          - name: op15
+            url: https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8850.git
+            commit: 5ab2a689ff87d7d28c511f1762cf41c1b90d965a
+            sparse: ''
+          - name: toolchain
+            url: https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
+            commit: 18bfb7fbd697a1ad710fd0581a4ac9f3db385f71
+            sparse: clang-r510928
+    steps:
+      - name: Fetch immutable revision and record identity
+        env:
+          INPUT_NAME: ${{ matrix.name }}
+          INPUT_URL: ${{ matrix.url }}
+          INPUT_COMMIT: ${{ matrix.commit }}
+          INPUT_SPARSE: ${{ matrix.sparse }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/public-inputs" "$RUNNER_TEMP/public-artifact"
+          cd "$RUNNER_TEMP/public-inputs"
+          git init -q "$INPUT_NAME"
+          git -C "$INPUT_NAME" remote add origin "$INPUT_URL"
+          if [ -n "$INPUT_SPARSE" ]; then
+            git -C "$INPUT_NAME" sparse-checkout init --cone
+            git -C "$INPUT_NAME" sparse-checkout set "$INPUT_SPARSE"
+          fi
+          git -C "$INPUT_NAME" -c http.version=HTTP/1.1 fetch --filter=blob:none --depth=1 origin "$INPUT_COMMIT"
+          git -C "$INPUT_NAME" checkout --detach FETCH_HEAD
+          test "$(git -C "$INPUT_NAME" rev-parse HEAD)" = "$INPUT_COMMIT"
+          test -z "$(git -C "$INPUT_NAME" status --porcelain)"
+          git -C "$INPUT_NAME" log -1 --format=fuller > "$RUNNER_TEMP/public-artifact/revision.txt"
+          if [ "$INPUT_NAME" = toolchain ]; then
+            "$INPUT_NAME/clang-r510928/bin/clang" --version | tee "$RUNNER_TEMP/public-artifact/compiler.txt"
+            grep -q '11368308' "$RUNNER_TEMP/public-artifact/compiler.txt"
+            grep -q 'r510928' "$RUNNER_TEMP/public-artifact/compiler.txt"
+            grep -q '18.0.0' "$RUNNER_TEMP/public-artifact/compiler.txt"
+          fi
+          tar -czf "$RUNNER_TEMP/public-artifact/$INPUT_NAME.tar.gz" "$INPUT_NAME"
+          cd "$RUNNER_TEMP/public-artifact"
+          sha256sum "$INPUT_NAME.tar.gz" > SHA256SUMS
+      - name: Store public source bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-public-${{ matrix.name }}
+          path: ${{ runner.temp }}/public-artifact/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
