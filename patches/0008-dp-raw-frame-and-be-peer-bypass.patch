@@ -14,7 +14,7 @@ diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c b/
 diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
 --- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
 +++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
-@@ -357,21 +357,23 @@ void dp_tx_process_htt_completion_be(struct dp_soc *soc,
+@@ -357,24 +357,27 @@ void dp_tx_process_htt_completion_be(struct dp_soc *soc,
  	} else {
  		ts.peer_id = HTT_INVALID_PEER;
  		ts.tid = HTT_INVALID_TID;
