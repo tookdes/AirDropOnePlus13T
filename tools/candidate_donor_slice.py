@@ -76,8 +76,8 @@ def reproduce(target: Path, output: Path, seed: Path,
     (output/wonder).parent.mkdir(parents=True,exist_ok=True)
     shutil.copy2(target/wonder,output/wonder)
     series=[n for n in (seed/'patches/series').read_text().splitlines() if n and not n.startswith('#')]
-    if len(series) != 8:
-        raise ValueError('Expected eight pinned review patches')
+    if len(series) != 9:
+        raise ValueError('Expected nine pinned review patches')
     reserved=set()
     for name in series:
         patch=(seed/'patches'/name).read_bytes()
