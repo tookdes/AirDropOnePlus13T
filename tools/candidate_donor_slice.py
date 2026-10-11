@@ -76,8 +76,8 @@ def reproduce(target: Path, output: Path, seed: Path,
     (output/wonder).parent.mkdir(parents=True,exist_ok=True)
     shutil.copy2(target/wonder,output/wonder)
     series=[n for n in (seed/'patches/series').read_text().splitlines() if n and not n.startswith('#')]
-    if len(series) != 7:
-        raise ValueError('Expected seven pinned review patches')
+    if len(series) != 8:
+        raise ValueError('Expected eight pinned review patches')
     reserved=set()
     for name in series:
         patch=(seed/'patches'/name).read_bytes()
@@ -108,7 +108,7 @@ def reproduce(target: Path, output: Path, seed: Path,
     if len(accepted)!=EXPECTED_PATH_COUNT or digest!=EXPECTED_PATHS_SHA256:
         raise ValueError(f'Candidate frontier drift: {len(accepted)} {digest}; refusing to publish')
     report={'target_sha':TARGET,'donor_intro':INTRO,'donor_parent':INTRO_PARENT,
-            'release_ready':False,'compile_only':True,'seven_seed_patches':series,
+            'release_ready':False,'compile_only':True,'reviewed_seed_patches':series,
             'candidate_paths':accepted,'skipped_count':len(skipped),
             'accepted_path_set_sha256':digest,
             'selected_diff_sha256':hashlib.sha256(b''.join(content)).hexdigest(),
