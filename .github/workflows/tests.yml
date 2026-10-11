@@ -14,9 +14,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Run regression tests; private stock integration is explicitly skipped in public CI
-        run: python3 -m unittest discover -s tests -v
-      - name: Regenerate all four seed patches and reject drift
+      - name: Regenerate source fixtures and all four seed patches; reject drift
         run: |
           python3 tools/extend_series.py
           git diff --exit-code -- patches
+      - name: Run regression tests; private stock integration is explicitly skipped in public CI
+        run: python3 -m unittest discover -s tests -v

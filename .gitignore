@@ -14,6 +14,8 @@ modules.order
 inputs/
 build-work/
 evidence/stock/
+evidence/patch-validation.json
+module/staged-source/
 upstream/op13t/
 upstream/op15/
 shim/include/target_layout.generated.*
