@@ -97,7 +97,14 @@ def extend() -> dict:
         raise ValueError('Target 6.6 DP adaptation changed without review')
     if len([ln for ln in dp_data.splitlines() if ln.startswith(b'diff --git a/')]) != 6:
         raise ValueError('Target 6.6 DP adaptation must change exactly six paths')
-    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n')
+    dp_sem_name = '0008-dp-raw-frame-and-be-peer-bypass.patch'
+    dp_sem_data = (ROOT/'patches'/dp_sem_name).read_bytes()
+    dp_sem_blob = '1a6322101f6712881711481fa60fcf45c258c9cf'
+    if blob_hash(dp_sem_data) != dp_sem_blob:
+        raise ValueError('Donor-exact DP raw/peer semantics patch changed without review')
+    if len([ln for ln in dp_sem_data.splitlines() if ln.startswith(b'diff --git a/')]) != 2:
+        raise ValueError('DP raw/peer semantics patch must change exactly two approved paths')
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n'+dp_sem_name+'\n')
     result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
