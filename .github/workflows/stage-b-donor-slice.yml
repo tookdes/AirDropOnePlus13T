@@ -1,0 +1,58 @@
+name: Reproduce pinned donor introduction slice (compile-only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/candidate_donor_slice.py'
+      - '.github/workflows/stage-b-donor-slice.yml'
+      - 'patches/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: op13t-donor-slice-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-slice:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve exact public source commits, no device evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/op13t"
+          git -C "$RUNNER_TEMP/op13t" init -q
+          git -C "$RUNNER_TEMP/op13t" remote add origin https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750.git
+          git -C "$RUNNER_TEMP/op13t" fetch --depth=1 origin 6a196f79f77acd55cf302e1696c038e4cad99254
+          git -C "$RUNNER_TEMP/op13t" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/op13t" rev-parse HEAD)" = 6a196f79f77acd55cf302e1696c038e4cad99254
+          mkdir -p "$RUNNER_TEMP/op15"
+          git -C "$RUNNER_TEMP/op15" init -q
+          git -C "$RUNNER_TEMP/op15" remote add origin https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8850.git
+          git -C "$RUNNER_TEMP/op15" fetch --depth=1 origin 307d23721d20e21b8160b9ba9c3cb50911ff8c00
+          git -C "$RUNNER_TEMP/op15" fetch --depth=1 origin 7fb7abf097a18c6e2ad2fb9d18876b095898e87f
+      - name: Reconstruct 60-file donor candidate set; refuse changed frontier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/candidate_donor_slice.py \
+            --target "$RUNNER_TEMP/op13t" \
+            --donor "$RUNNER_TEMP/op15" \
+            --output "$RUNNER_TEMP/compile-only-candidate"
+          cp "$RUNNER_TEMP/compile-only-candidate/backport-candidate.json" candidate-report.json
+          python3 - <<'PY'
+          import json
+          obj=json.load(open('candidate-report.json'))
+          assert obj['compile_only'] is True and obj['release_ready'] is False
+          assert len(obj['candidate_paths'])==60
+          print('Reviewed seed + 60 file-wide donor candidates reproduced; not a module build')
+          PY
+      - name: Publish only an evidence manifest, never binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-pinned-donor-slice-report
+          path: candidate-report.json
+          retention-days: 14
+          if-no-files-found: error
