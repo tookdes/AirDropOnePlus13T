@@ -1,0 +1,21 @@
+name: Temporary export of public backport workbench
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/export-workbench.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-backport-workbench
+          path: |
+            patches/
+            tools/
+            tests/
+          retention-days: 1
+          if-no-files-found: error
