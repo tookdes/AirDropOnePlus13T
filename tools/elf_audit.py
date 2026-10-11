@@ -32,7 +32,7 @@ class Module:
             name = self.string(names, h[0])
             if name in self.sections:
                 raise ElfError('Duplicate section name: '+name)
-            if h[1] != 8:
+            if h[1] != 8:  # SHT_NOBITS has no file data.
                 self.take(h[4], h[5])
             self.sections[name] = h
 
@@ -114,7 +114,7 @@ class Module:
 def merge_stock(paths: list[Path], baseline: Path | None = None) -> dict[str,int]:
     result = {}
     def add(sym, crc):
-        if not isinstance(sym, str) or not sym or not sym.isascii() or '\0' in sym:
+        if not isinstance(sym, str) or not sym or not sym.isascii() or "\0" in sym:
             raise ElfError('Invalid captured stock symbol name')
         if type(crc) is not int or not 0 <= crc <= 0xffffffff:
             raise ElfError('Captured CRC is outside its 32-bit range: '+sym)

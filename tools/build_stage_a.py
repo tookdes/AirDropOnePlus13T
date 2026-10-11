@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Build Stage A ABI probes using a verified target build tree.
+"""Build only Stage A/A2 against a prepared and independently verified target kernel tree.
 
-Not a qcacld backport builder. Never loads a module, writes device firmware,
+Not a full qcacld backport builder. Never loads a module, writes device firmware,
 changes CRCs, or packages an installable AirDrop release.
 """
 from __future__ import annotations
@@ -18,6 +18,7 @@ from elf_audit import audit, merge_stock
 from layout_from_btf import generate
 ROOT=Path(__file__).resolve().parents[1]
 COMMON_COMMIT='5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143'
+TARGET_RELEASE='6.6.89-android15-8-g5a0ffb447c1d-ab13771415-4k'
 REQUIRED={'CONFIG_ARM64':'y','CONFIG_MODVERSIONS':'y','CONFIG_CFI_CLANG':'y',
           'CONFIG_LTO_NONE':'y','CONFIG_RANDSTRUCT_NONE':'y','CONFIG_MODULE_UNLOAD':'y'}
 
@@ -35,6 +36,7 @@ def preflight(source:Path, output:Path, config:Path, clang:Path):
     expected=config_values(config.read_bytes()); actual=config_values((output/'.config').read_bytes())
     for key,val in REQUIRED.items():
         if expected.get(key)!=val: raise ValueError('Captured config violates required constraint: '+key)
+    # LOCALVERSION is separately recorded; it does not excuse other config differences.
     differing=sorted(k for k in set(expected)|set(actual)
                      if k!='CONFIG_LOCALVERSION' and expected.get(k,'n')!=actual.get(k,'n'))
     if differing: raise ValueError('Build .config differs from captured config: '+', '.join(differing[:30]))
@@ -42,6 +44,8 @@ def preflight(source:Path, output:Path, config:Path, clang:Path):
     if commit!=COMMON_COMMIT: raise ValueError('Kernel source commit is not the captured release base')
     if subprocess.check_output(['git','-C',str(source),'status','--porcelain'],text=True).strip():
         raise ValueError('Kernel source tree must be clean before Stage A build')
+    if (output/'include/config/kernel.release').read_text().strip()!=TARGET_RELEASE:
+        raise ValueError('Prepared kernel release is not the captured target')
     if not (output/'Module.symvers').is_file(): raise ValueError('A verified Module.symvers is required')
     version=subprocess.check_output([str(clang/'clang'),'--version'],text=True)
     if not all(x in version for x in ('18.0.0','r510928','11368308')):
@@ -87,7 +91,8 @@ def main():
         ignore=shutil.ignore_patterns('*.o','*.ko','*.cmd','.*.cmd','*.o.d','*.mod*','Module.symvers','modules.order','target_layout.generated.*'))
     if a.btf: record['layout']=generate(a.btf,a.stock_config,work/'include/target_layout.generated.h')
     cmd=['make','-C',str(source),'O='+str(output),'M='+str(work),'ARCH=arm64',
-         'LLVM='+str(clang)+'/', 'LLVM_IAS=1','BUILD_WONDER_SHIM='+('1' if a.btf else '0'),'-j2','modules']
+         'LLVM='+str(clang)+'/', 'KERNELRELEASE='+TARGET_RELEASE, 'LLVM_IAS=1','BUILD_WONDER_SHIM='+('1' if a.btf else '0'),'-j2','modules']
+    # Do not inherit an environment that silently weakens compiler/module checks.
     env=os.environ.copy()
     for key in ('KCFLAGS','KCPPFLAGS','CFLAGS_MODULE','KBUILD_MODPOST_WARN','KBUILD_EXTRA_SYMBOLS',
                 'KBUILD_MODPOST_NOFINAL','KCONFIG_CONFIG','LLVM','ARCH','CROSS_COMPILE',
@@ -109,6 +114,8 @@ def main():
                     result=audit(work/name,expected)
                     from elf_audit import Module
                     mod=Module((work/name).read_bytes())
+                    if mod.modinfo().get('vermagic', [''])[0].split(' ',1)[0]!=TARGET_RELEASE:
+                        result['errors'].append('Module release does not match captured target')
                     if a.captured_exports:
                         section=mod.sections.get('.gnu.linkonce.this_module')
                         if not section or section[5]!=export_report['btf']['layouts']['OP13T_MODULE_SIZE']:

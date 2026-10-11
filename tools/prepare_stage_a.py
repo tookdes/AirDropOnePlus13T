@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Prepare the exact ARM64 header environment and independently regenerate CRCs.
 
-Module.symvers comes from actual stock boot exports, never invented CRCs.
-Compile real kernel translation units and compare fresh genksyms output first.
-No target kernel is flashed and no phone is contacted.
+The emitted Module.symvers contains actual exports parsed from the supplied
+stock boot image, NOT the union of imported CRCs. Before accepting it, compile
+several real kernel translation units and compare fresh genksyms output against
+that evidence. No target kernel is linked/flashed and no device is contacted.
 """
 from __future__ import annotations
 import argparse
@@ -14,7 +15,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from build_stage_a import config_values
+from build_stage_a import config_values, TARGET_RELEASE
 ROOT=Path(__file__).resolve().parents[1]
 COMMON='5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143'
 CLANG_COMMIT='18bfb7fbd697a1ad710fd0581a4ac9f3db385f71'
@@ -92,8 +93,7 @@ def compare_fresh(fresh:dict[str,int], expected:dict[str,int]):
     missing_stock=sorted(REQUIRED_FRESH-expected.keys())
     mismatch={n:{'fresh':f'0x{v:08x}','stock':f'0x{expected[n]:08x}'}
               for n,v in fresh.items() if n in expected and v!=expected[n]}
-    if missing or missing_stock or mismatch:
-        raise ValueError(json.dumps({'missing_required_crc':missing,'missing_stock_crc':missing_stock,'mismatches':mismatch}))
+    if missing or missing_stock or mismatch:raise ValueError(json.dumps({'missing_required_crc':missing,'missing_stock_crc':missing_stock,'mismatches':mismatch}))
     return {n:f'0x{v:08x}' for n,v in sorted(fresh.items()) if n in expected}
 
 def prepare(work:Path,evidence:Path,fetch:bool)->dict:
@@ -115,7 +115,7 @@ def prepare(work:Path,evidence:Path,fetch:bool)->dict:
     out=work/'kernel-out'
     if out.exists():raise ValueError('Use a new workspace; refusing to overwrite prepared build output')
     out.mkdir();shutil.copyfile(evidence/'boot.config',out/'.config')
-    make=['make','-C',str(source),'O='+str(out),'ARCH=arm64','LLVM='+str(compiler)+'/', 'LLVM_IAS=1','-j2']
+    make=['make','-C',str(source),'O='+str(out),'ARCH=arm64','LLVM='+str(compiler)+'/', 'KERNELRELEASE='+TARGET_RELEASE,'LLVM_IAS=1','-j2']
     run(make+['olddefconfig'],log)
     before=config_values((evidence/'boot.config').read_bytes());after=config_values((out/'.config').read_bytes())
     diff={k:[before.get(k,'n'),after.get(k,'n')] for k in set(before)|set(after)
@@ -133,15 +133,15 @@ def prepare(work:Path,evidence:Path,fetch:bool)->dict:
             if n in fresh and fresh[n]!=v:raise ValueError('Conflicting generated symbol versions')
             fresh[n]=v
     checked=compare_fresh(fresh,expected)
-    # Only after independent genksyms comparison expose captured export data.
-    # Never rewrite a built module's __versions section.
+    # Only after independent genksyms comparison do we expose stock export data
+    # to modpost. We never rewrite a built module's __versions section.
     shutil.copyfile(evidence/'vmlinux.exports.symvers',out/'Module.symvers')
     proof={'schema':1,'source_commit':COMMON,'compiler_commit':CLANG_COMMIT,'compiler_version':version,
            'compiler_sha256':digest(compiler/'clang'),'boot_sha256':report['boot']['boot_sha256'],
            'config_sha256':digest(evidence/'boot.config'),'stock_symvers_sha256':digest(out/'Module.symvers'),
            'fresh_genksyms_matches':checked,'fresh_genksyms_count':len(checked),
            'symvers_origin':'actual boot export tables; NOT synthesized from imports',
-           'full_kernel_link':False,'phone_accessed':False}
+           'full_kernel_link':False,'phone_accessed':False,'target_release':TARGET_RELEASE}
     (work/'prepare-proof.json').write_text(json.dumps(proof,indent=2)+'\n')
     return proof
 

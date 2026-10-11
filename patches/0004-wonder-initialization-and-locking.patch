@@ -1,0 +1,73 @@
+From 286d3a2919c0dee4093e86fd79e39ddf9aac76f6 Mon Sep 17 00:00:00 2001
+From: op13t-wonder source workbench <noreply@localhost>
+Date: Sun, 11 Oct 2026 00:00:00 +0000
+Subject: [PATCH] wonder: initialize vendor parameters and release rate-mask
+ mutex
+
+The mac80211 caller initializes only three capability bits. Do not
+copy its uninitialized retry/reserved fields. Initialize the vendor
+parameter block, preserve those three flags, and use cached settings.
+Return through unlock after the rate-mask callback, on success or failure.
+Do not sleep after the final init attempt; log the actual backoff.
+
+Target source: 6a196f79f77acd55cf302e1696c038e4cad99254.
+Host mocks reproduce original defects; not a target-kernel build.
+---
+ vendor/oplus/kernel/wifi/wonder/wondertap.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/vendor/oplus/kernel/wifi/wonder/wondertap.c b/vendor/oplus/kernel/wifi/wonder/wondertap.c
+index 00b9799..d8c538c 100644
+--- a/vendor/oplus/kernel/wifi/wonder/wondertap.c
++++ b/vendor/oplus/kernel/wifi/wonder/wondertap.c
+@@ -70,10 +70,13 @@ static void wondertap_dump_init_params(struct wondertap_init_params *params)
+ 
+ int wondertap_init(struct wondertap_data *wondertap, const struct wondertap_init_params *_params)
+ {
+-	struct wondertap_init_params params;
++	struct wondertap_init_params params = {0};
+ 	int ret = -EOPNOTSUPP;
+ 	int retry;
+ 
++	if (!wondertap || !_params)
++		return -EINVAL;
++
+ 	mutex_lock(&wondertap->lock);
+ 	if (wondertap_is_up(wondertap)) {
+ 		wonder_warn("Already initialized\n");
+@@ -99,8 +102,13 @@ int wondertap_init(struct wondertap_data *wondertap, const struct wondertap_init
+ 		memcpy(params.mac_addr, wondertap->mac_addr, ETH_ALEN);
+ 		memcpy(params.country_code, wondertap->cached_country_code, sizeof(wondertap->cached_country_code));
+ 
+-		if (_params->rate_adaptation_enable) {
+-			params.rate_adaptation_enable = _params->rate_adaptation_enable;
++		/* Only these capability flags are initialized by wonder_start().
++		 * Retry limits and reserved fields must remain zero, not stack data.
++		 */
++		params.amsdu_enable = _params->amsdu_enable;
++		params.ampdu_enable = _params->ampdu_enable;
++		params.rate_adaptation_enable = _params->rate_adaptation_enable;
++		if (params.rate_adaptation_enable) {
+ 			params.tx_rate_mask.max_preamble = wondertap->cached_tx_rate.preamble;
+ 			params.tx_rate_mask.max_bw = wondertap->cached_tx_rate.bw;
+ 			params.tx_rate_mask.max_nss = wondertap->cached_tx_rate.nss;
+@@ -113,8 +121,8 @@ int wondertap_init(struct wondertap_data *wondertap, const struct wondertap_init
+ 			if (ret == 0)
+ 				break;
+ 
+-			if (retry < 5) {
+-				wonder_warn("Vendor init failed: %d. Retrying in 1 second...(retry %d)\n",
++			if (retry < 3) {
++				wonder_warn("Vendor init failed: %d. Retrying in 400 ms...(retry %d)\n",
+ 					ret, retry + 1);
+ 				msleep(400);
+ 			}
+@@ -237,7 +245,7 @@ int wondertap_set_tx_rate_mask(struct wondertap_data *wondertap, const struct wo
+ 	wondertap->cache_flags |= WONDERTAP_CACHE_TX_RATE_SET;
+ 	if (wondertap_is_up(wondertap)) {
+ 		if (wondertap_ops && wondertap_ops->set_tx_rate_mask) {
+-			return wondertap_ops->set_tx_rate_mask(wondertap->vendor_handle, params);
++			ret = wondertap_ops->set_tx_rate_mask(wondertap->vendor_handle, params);
+ 		} else {
+ 			wonder_error("Vendor operation 'set_tx_rate_mask' is not implemented\n");
+ 			ret = -EOPNOTSUPP;

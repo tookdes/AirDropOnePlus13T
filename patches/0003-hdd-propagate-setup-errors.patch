@@ -1,0 +1,51 @@
+From e8a2b6c6ec1ee1d10d4c45c2e5ad43af6d7c6edf Mon Sep 17 00:00:00 2001
+From: op13t-wonder source workbench <noreply@localhost>
+Date: Sun, 11 Oct 2026 00:00:00 +0000
+Subject: [PATCH 3/3] hdd: preserve WonderTap setup failures instead of
+ reporting success
+
+Return immediately when fixed-rate or SGI WMI configuration fails.
+Previously a later successful command overwrote the earlier error.
+Set -EOPNOTSUPP before cleanup when the driver is not in mission mode.
+Previously errno could remain zero from context validation.
+This is a narrow error-propagation fix, NOT complete cleanup/SSR hardening.
+---
+ .../wlan/qcacld-3.0/core/hdd/src/wlan_hdd_wondertap.c    | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_wondertap.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_wondertap.c
+index d1a69c4..14b9b2c 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_wondertap.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_wondertap.c
+@@ -177,8 +177,10 @@ __wlan_hdd_wondertap_set_fixed_tx_rate(struct hdd_adapter *adapter,
+ 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
+ 				  wmi_vdev_param_fixed_rate,
+ 				  rate_code, VDEV_CMD);
+-	if (ret)
++	if (ret) {
+ 		hdd_err("Set fixed tx rate for wondertap failed:%d", ret);
++		return ret;
++	}
+ 
+ 	switch (params->gi) {
+ 	case WONDERTAP_RATE_GI_SHORT:
+@@ -200,8 +202,10 @@ __wlan_hdd_wondertap_set_fixed_tx_rate(struct hdd_adapter *adapter,
+ 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
+ 				  wmi_vdev_param_sgi,
+ 				  gi, VDEV_CMD);
+-	if (ret)
++	if (ret) {
+ 		hdd_err("Set GI for wondertap failed:%d", ret);
++		return ret;
++	}
+ 
+ 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
+ 				  wmi_vdev_param_chwidth,
+@@ -494,6 +498,7 @@ int wlan_hdd_wondertap_init(void **handle,
+ 
+ 	if (hdd_get_conparam() != QDF_GLOBAL_MISSION_MODE) {
+ 		hdd_err("Command not allowed in mode:%d", hdd_get_conparam());
++		errno = -EOPNOTSUPP;
+ 		goto destroy_sync;
+ 	}
+ 

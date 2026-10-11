@@ -266,4 +266,4 @@ static void __exit wonder_shim_13t_exit(void)
 module_init(wonder_shim_13t_init);
 module_exit(wonder_shim_13t_exit);
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("OnePlus 13T runtime WonderTap provider; diagnostics-only by default");
+MODULE_DESCRIPTION("OnePlus 13T Wonder provider bridge; read-only diagnostics by default");

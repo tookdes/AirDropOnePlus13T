@@ -74,8 +74,9 @@ class Btf:
         return next(iter(sizes))
 
     def member_offset(self, name: str, member: str) -> int:
-        # Validate this exact layout fact across ALL duplicate named variants.
-        # Do not pick the first record or claim field types are equivalent.
+        # Real BTF can retain duplicate named types from different compile
+        # units. Validate this exact layout fact across ALL variants. Do not
+        # pick the first record or claim their field types are equivalent.
         variants=self.structs.get(name,[])
         if not variants: raise BtfError('Missing struct: '+name)
         offsets=set()
