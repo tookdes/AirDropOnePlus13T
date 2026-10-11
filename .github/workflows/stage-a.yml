@@ -1,0 +1,71 @@
+name: Build ARM64 Stage A with captured ABI profile
+on:
+  push:
+    branches: [main]
+    paths: ['shim/**', 'tools/build_public_stage_a.py', 'tools/prepare_stage_a.py', 'tools/build_stage_a.py', 'tools/elf_audit.py', 'profiles/stage-a*', '.github/workflows/stage-a.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: op13t-stage-a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install genuine build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev pahole gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+          pahole --version | grep -qx v1.25
+      - name: Fetch exact kernel common and Android compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/op13t-inputs"
+          cd "$RUNNER_TEMP/op13t-inputs"
+          git init -q common
+          git -C common remote add origin https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8750.git
+          git -C common fetch --depth=1 origin 5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143
+          git -C common checkout --detach FETCH_HEAD
+          git init -q toolchain
+          git -C toolchain remote add origin https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
+          git -C toolchain sparse-checkout init --cone
+          git -C toolchain sparse-checkout set clang-r510928
+          git -C toolchain -c http.version=HTTP/1.1 fetch --filter=blob:none --depth=1 origin 18bfb7fbd697a1ad710fd0581a4ac9f3db385f71
+          git -C toolchain checkout --detach FETCH_HEAD
+          test "$(git -C toolchain rev-parse HEAD)" = 18bfb7fbd697a1ad710fd0581a4ac9f3db385f71
+      - name: Build target objects, verify fresh CRCs, then build both ARM64 modules
+        shell: bash
+        env:
+          USERCFLAGS: --sysroot=/usr/aarch64-linux-gnu --gcc-toolchain=/usr
+          USERLDFLAGS: -fuse-ld=lld
+        run: |
+          set -euo pipefail
+          python3 tools/build_public_stage_a.py \
+            --kernel-source "$RUNNER_TEMP/op13t-inputs/common" \
+            --clang-dir "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
+            --out "$RUNNER_TEMP/op13t-stage-a"
+      - name: Publish only offline-verified probes; NOT an AirDrop release
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-stage-a-arm64-probes
+          path: |
+            ${{ runner.temp }}/op13t-stage-a/verified/
+            ${{ runner.temp }}/op13t-stage-a/stage-a-result.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Preserve build log even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-stage-a-build-log
+          path: |
+            ${{ runner.temp }}/op13t-stage-a/build.log
+            ${{ runner.temp }}/op13t-stage-a/stage-a-result.json
+          retention-days: 14
+          if-no-files-found: warn

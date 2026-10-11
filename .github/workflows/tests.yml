@@ -1,0 +1,22 @@
+name: Source regression tests
+on:
+  push:
+    branches: [main]
+    paths: ['tools/**', 'tests/**', 'shim/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
+  pull_request:
+    paths: ['tools/**', 'tests/**', 'shim/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run regression tests; private stock integration is explicitly skipped in public CI
+        run: python3 -m unittest discover -s tests -v
+      - name: Regenerate all four seed patches and reject drift
+        run: |
+          python3 tools/extend_series.py
+          git diff --exit-code -- patches

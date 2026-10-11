@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "target_release": "6.6.89-android15-8-g5a0ffb447c1d-ab13771415-4k",
+  "kernel_commit": "5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143",
+  "compiler_commit": "18bfb7fbd697a1ad710fd0581a4ac9f3db385f71",
+  "compiler_sha256": "dc739fc44bb889146bd47732912cad457200af7de7c2fb5a7509b7a9974d6d67",
+  "config_canonical_sha256": "0f4ad7a0b257a844629dbbb2304391a260335fed8a34dbb0be74d05c42fa56e1",
+  "config_overrides": {
+    "CONFIG_TRIM_UNUSED_KSYMS": "y",
+    "CONFIG_UNUSED_KSYMS_WHITELIST": "\"abi_symbollist.raw\""
+  },
+  "stock_boot_sha256": "3672b815e7afc2f6c9807d211bdbbf53757cb8537dcbc80ba5a49ff2b5a8a66e",
+  "stock_config_sha256": "9b544345144b5e7d050981905a655308700151693ddf9d10f94eee1eadeb19ec",
+  "stock_btf_sha256": "d172f1d74e3cdd5bcebb6f5535f6585a1be9831fdfd46f4c90eed8255a1a20e2",
+  "layouts": {
+    "OP13T_PLATFORM_DEV_OFFSET": 16,
+    "OP13T_DEVICE_DRIVER_DATA_OFFSET": 152,
+    "OP13T_DEVICE_OF_NODE_OFFSET": 768,
+    "OP13T_MODULE_SIZE": 1536
+  },
+  "fresh_genksyms_symbols": [
+    "__of_parse_phandle_with_args", "__platform_driver_probe", "__platform_driver_register", "__platform_register_drivers",
+    "component_add", "component_add_typed", "component_bind_all", "component_compare_of", "component_del",
+    "component_master_add_with_match", "component_master_del", "component_match_add_release", "component_match_add_typed", "component_unbind_all",
+    "devm_platform_get_and_ioremap_resource", "devm_platform_get_irqs_affinity", "devm_platform_ioremap_resource", "devm_platform_ioremap_resource_byname",
+    "module_layout", "of_add_property", "of_alias_from_compatible", "of_alias_get_highest_id", "of_alias_get_id", "of_chosen", "of_count_phandle_with_args",
+    "of_device_is_available", "of_device_is_big_endian", "of_device_is_compatible", "of_find_all_nodes", "of_find_compatible_node",
+    "of_find_matching_node_and_match", "of_find_node_by_name", "of_find_node_by_phandle", "of_find_node_by_type", "of_find_node_opts_by_path",
+    "of_find_node_with_property", "of_find_property", "of_get_child_by_name", "of_get_compatible_child", "of_get_next_available_child", "of_get_next_child",
+    "of_get_next_cpu_node", "of_get_next_parent", "of_get_parent", "of_get_property", "of_machine_compatible_match", "of_match_node", "of_n_addr_cells",
+    "of_n_size_cells", "of_node_name_eq", "of_node_name_prefix", "of_phandle_iterator_init", "of_phandle_iterator_next", "of_remove_property", "of_root",
+    "platform_bus", "platform_bus_type", "platform_device_add", "platform_device_add_data", "platform_device_add_resources", "platform_device_alloc",
+    "platform_device_del", "platform_device_put", "platform_device_register", "platform_device_register_full", "platform_device_unregister",
+    "platform_driver_unregister", "platform_find_device_by_driver", "platform_get_irq", "platform_get_irq_byname", "platform_get_irq_byname_optional",
+    "platform_get_irq_optional", "platform_get_resource", "platform_get_resource_byname", "platform_irq_count", "platform_unregister_drivers"
+  ],
+  "selected_exports_count": 92,
+  "selected_exports_sha256": "e7fccb90cf0e0744b22750afb2249eafae6f8dfa20147784e89cecf77775f5dc",
+  "scope": "Only hello_13t and diagnostics-default shim. Original stock evidence independently parsed offline. Full Wi-Fi compatibility and live module load are NOT proven."
+}
