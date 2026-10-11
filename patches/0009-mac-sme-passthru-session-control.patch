@@ -1,0 +1,464 @@
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/sir_api.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/sir_api.h
+index 8c09ef59f2e4e8e942fa61918327f8c154788f54..2df9b4453be16c3c5f180b2832d55da01b4dbdba 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/sir_api.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/sir_api.h
+@@ -734,6 +734,7 @@ struct sir_set_antenna_mode {
+  * @eSIR_AUTO_MODE: Auto role
+  * @eSIR_MONITOR_MODE: Monitor mode
+  * @eSIR_NDI_MODE: NAN datapath mode
++ * @eSIR_PASSTHRU_MODE: Passthrough mode
+  */
+ enum bss_type {
+ 	eSIR_INFRASTRUCTURE_MODE,
+@@ -741,6 +742,7 @@ enum bss_type {
+ 	eSIR_AUTO_MODE,
+ 	eSIR_MONITOR_MODE,
+ 	eSIR_NDI_MODE,
++	eSIR_PASSTHRU_MODE,
+ 	eSIR_DONOT_USE_BSS_TYPE = SIR_MAX_ENUM_SIZE
+ };
+ 
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/wni_api.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/wni_api.h
+index 3852cb99b38522c8777e051b5d4cf04ed6081e91..058333b5b0ae35a853161f62460a1f9ad9699a5e 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/wni_api.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/inc/wni_api.h
+@@ -218,6 +218,8 @@ enum eWniMsgTypes {
+ 	WNI_SME_UPDATE_RNR_IES = SIR_SME_MSG_TYPES_BEGIN + 181,
+ 	WNI_SME_UPDATE_EDCA_PARAMS = SIR_SME_MSG_TYPES_BEGIN + 182,
+ 	eWNI_SME_MONITOR_MODE_VDEV_STOP = SIR_SME_MSG_TYPES_BEGIN + 183,
++	eWNI_SME_PASSTHRU_INIT_SESSION = SIR_SME_MSG_TYPES_BEGIN + 187,
++	eWNI_SME_PASSTHRU_DEINIT_SESSION = SIR_SME_MSG_TYPES_BEGIN + 188,
+ };
+ 
+ typedef struct sAniCfgTxRateCtrs {
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_global.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_global.h
+index 9e46b51790013beaba74b974d73b4eb465a2e756..1c3f313e221f9a114f565b176f0243fda07b1bf7 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_global.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_global.h
+@@ -62,7 +62,8 @@ typedef enum eLimSystemRole {
+ 	eLIM_P2P_DEVICE_ROLE,
+ 	eLIM_P2P_DEVICE_GO,
+ 	eLIM_P2P_DEVICE_CLIENT,
+-	eLIM_NDI_ROLE
++	eLIM_NDI_ROLE,
++	eLIM_PASSTHRU_ROLE
+ } tLimSystemRole;
+ 
+ /*
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_message_queue.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_message_queue.c
+index b81b158c214a96d4d59b6039d489223f66af7dcc..8bac627c87979f0c838f1ee5b9b492fac92ac99a 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_message_queue.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_message_queue.c
+@@ -2208,6 +2208,16 @@ static void lim_process_messages(struct mac_context *mac_ctx,
+ 		qdf_mem_free((void *)msg->bodyptr);
+ 		msg->bodyptr = NULL;
+ 		break;
++	case eWNI_SME_PASSTHRU_INIT_SESSION:
++		lim_passthrough_init_session(mac_ctx, msg->bodyptr);
++		qdf_mem_free((void *)msg->bodyptr);
++		msg->bodyptr = NULL;
++		break;
++	case eWNI_SME_PASSTHRU_DEINIT_SESSION:
++		lim_passthrough_deinit_session(mac_ctx, msg->bodyptr);
++		qdf_mem_free((void *)msg->bodyptr);
++		msg->bodyptr = NULL;
++		break;
+ 	default:
+ 		qdf_mem_free((void *)msg->bodyptr);
+ 		msg->bodyptr = NULL;
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_rsp_messages.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_rsp_messages.c
+index 981385edfcc907f5000019ef74209129a225259d..a7357cf13d3941e6308c93bfd311b2450b040d9b 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_rsp_messages.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_process_mlm_rsp_messages.c
+@@ -3305,7 +3305,8 @@ static void lim_handle_mon_switch_channel_rsp(struct pe_session *session,
+ {
+ 	struct scheduler_msg message = {0};
+ 
+-	if (session->bssType != eSIR_MONITOR_MODE)
++	if (!(session->bssType == eSIR_MONITOR_MODE ||
++	      session->bssType == eSIR_PASSTHRU_MODE))
+ 		return;
+ 
+ 	if (QDF_IS_STATUS_ERROR(status)) {
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_session.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_session.c
+index 3d32081c71e1df882c8119968d84e84893064e34..67d350213128efa7a2318a1c26b12bb40199b964 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_session.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_session.c
+@@ -561,7 +561,7 @@ struct pe_session *pe_create_session(struct mac_context *mac,
+ 
+ 	/* Copy the BSSID to the session table */
+ 	sir_copy_mac_addr(session_ptr->bssId, bssid);
+-	if (bssType == eSIR_MONITOR_MODE)
++	if (bssType == eSIR_MONITOR_MODE || bssType == eSIR_PASSTHRU_MODE)
+ 		sir_copy_mac_addr(mac->lim.gpSession[i].self_mac_addr, bssid);
+ 	session_ptr->valid = true;
+ 	/* Initialize the SME and MLM states to IDLE */
+@@ -628,6 +628,9 @@ struct pe_session *pe_create_session(struct mac_context *mac,
+ 		lim_get_peer_idxpool_size(numSta, bssType)))
+ 		goto free_session_attrs;
+ 
++	if (eSIR_PASSTHRU_MODE == bssType)
++		session_ptr->limSystemRole = eLIM_PASSTHRU_ROLE;
++
+ 	if (eSIR_INFRASTRUCTURE_MODE == bssType)
+ 		lim_ft_open(mac, &mac->lim.gpSession[i]);
+ 
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_utils.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_utils.c
+index e1520d0b70ba30396f7c56a187321856c2e837c2..3eed1796e88efdc2c530552d5b77b12500ea58bc 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_utils.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_utils.c
+@@ -11117,6 +11117,39 @@ void lim_overwrite_sta_puncture(struct pe_session *session,
+ #else
+ #endif
+ 
++static inline QDF_STATUS
++lim_fill_session_nss_params_on_create(struct mac_context *mac_ctx,
++				      struct pe_session *session)
++{
++	struct vdev_type_nss *vdev_type_nss;
++	enum QDF_OPMODE opmode;
++	enum bss_type bss_type = eSIR_DONOT_USE_BSS_TYPE;
++
++	opmode = wlan_get_opmode_from_vdev_id(mac_ctx->pdev, session->vdev_id);
++	if (opmode == QDF_PASSTHRU_MODE)
++		bss_type = eSIR_PASSTHRU_MODE;
++
++	pe_debug("opmode %d bss_type %d", opmode, bss_type);
++	if (!wlan_reg_is_24ghz_ch_freq(session->curr_op_freq)) {
++		vdev_type_nss = &mac_ctx->vdev_type_nss_5g;
++	} else {
++		vdev_type_nss = &mac_ctx->vdev_type_nss_2g;
++	}
++
++	switch (bss_type) {
++	case eSIR_PASSTHRU_MODE:
++		/* Use STA mode NSS config for PASSTHRU */
++		session->vdev_nss = vdev_type_nss->sta;
++		break;
++	default:
++		/* not used anywhere...used in scan function */
++		break;
++	}
++
++	session->nss = session->vdev_nss;
++	return QDF_STATUS_SUCCESS;
++}
++
+ QDF_STATUS lim_set_session_channel_params(struct mac_context *mac,
+ 					  struct pe_session *session)
+ {
+@@ -11201,6 +11234,9 @@ QDF_STATUS lim_set_session_channel_params(struct mac_context *mac,
+ 	session->ch_center_freq_seg0 = ch_params.center_freq_seg0;
+ 	session->ch_center_freq_seg1 = ch_params.center_freq_seg1;
+ 
++	if (LIM_IS_PASSTHRU_ROLE(session))
++		lim_fill_session_nss_params_on_create(mac, session);
++
+ 	mlme_obj = wlan_vdev_mlme_get_cmpt_obj(session->vdev);
+ 	if (!mlme_obj) {
+ 		pe_err("vdev component object is NULL");
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/mac_trace.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/mac_trace.c
+index 9236dca74358bd471d6c2fdd3c62f223b6a163d3..b460f375c1fd44cb9956e47573c939a996d04902 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/mac_trace.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/sys/legacy/src/utils/src/mac_trace.c
+@@ -286,6 +286,8 @@ uint8_t *mac_trace_get_sme_msg_string(uint16_t sme_msg)
+ 		CASE_RETURN_STRING(eWNI_SME_STA_CSA_CONTINUE_REQ);
+ 		CASE_RETURN_STRING(eWNI_SME_ANTENNA_ISOLATION_RSP);
+ 		CASE_RETURN_STRING(eWNI_SME_CH_SWITCH_STARTED_NOTIFY);
++		CASE_RETURN_STRING(eWNI_SME_PASSTHRU_INIT_SESSION);
++		CASE_RETURN_STRING(eWNI_SME_PASSTHRU_DEINIT_SESSION);
+ 	default:
+ 		return (uint8_t *) "UNKNOWN";
+ 		break;
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_api.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_api.h
+index 095e7500d1b162d740c8d6af48bba687c13fc532..e7cce1ff36c673d966b96b9cd4f4c962d3f91914 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_api.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_api.h
+@@ -2226,17 +2226,22 @@ sme_apf_read_work_memory(mac_handle_t mac_handle,
+ #endif /* FEATURE_WLAN_APF */
+ 
+ uint32_t sme_get_wni_dot11_mode(mac_handle_t mac_handle);
++
++QDF_STATUS sme_create_pe_session(mac_handle_t mac_handle, uint8_t *bssid,
++				 uint8_t vdev_id, enum QDF_OPMODE op_mode);
+ QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, uint8_t *bssid,
+ 				  uint8_t vdev_id);
+ 
+ /**
+- * sme_delete_mon_session() - post message to delete PE session for mon_mode
+- * operation
++ * sme_delete_pe_session() - post message to delete PE session
+  * @mac_handle: Opaque handle to the global MAC context
+  * @vdev_id: sme session id
++ * @op_mode: vdev operating mode
+  *
+  * Return: QDF_STATUS_SUCCESS on success, non-zero error code on failure.
+  */
++QDF_STATUS sme_delete_pe_session(mac_handle_t mac_handle, uint8_t vdev_id,
++				 enum QDF_OPMODE op_mode);
+ QDF_STATUS sme_delete_mon_session(mac_handle_t mac_handle, uint8_t vdev_id);
+ 
+ /**
+@@ -4766,14 +4771,20 @@ QDF_STATUS sme_vdev_self_peer_delete_resp(struct del_vdev_params *param);
+  */
+ void sme_vdev_del_resp(uint8_t vdev_id);
+ 
+-#ifdef FEATURE_MONITOR_MODE_SUPPORT
++#if defined(FEATURE_MONITOR_MODE_SUPPORT) || defined(DRIVER_PASSTHRU_MODE)
+ /**
+- * sme_set_monitor_mode_cb() - Register monitor mode vdev up operation callback
++ * sme_set_op_mode_cb() - Register mode specific vdev up operation callback
+  * @mac_handle: Opaque handle to the MAC context
+- * @monitor_mode_cb: callback to be registered
++ * @monitor_mode_cb: callback to be registered for monitor vdev
++ * @passthrough_mode_cb: callback to be registered for passthrough vdev
+  *
+  * Return: QDF_STATUS
+  */
++QDF_STATUS sme_set_op_mode_cb(mac_handle_t mac_handle,
++			      void (*monitor_mode_cb)(uint8_t vdev_id,
++						      bool is_up),
++			      void (*passthrough_mode_cb)(uint8_t vdev_id,
++							  bool is_up));
+ QDF_STATUS sme_set_monitor_mode_cb(mac_handle_t mac_handle,
+ 				   void (*monitor_mode_cb)(uint8_t vdev_id,
+ 							   bool is_up));
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_internal.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_internal.h
+index 408e3786ed6c42783f0b804ebc1d339d4711a12f..6dafb76ca388a7759cea3b344dc7dc383f8e129d 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_internal.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/inc/sme_internal.h
+@@ -531,6 +531,9 @@ struct sme_context {
+ 				      struct wlan_objmgr_vdev *vdev);
+ 	void (*set_disconnect_link_info_cb)(uint8_t vdev_id,
+ 					    bool is_disconnect_sent);
++#ifdef DRIVER_PASSTHRU_MODE
++	void (*passthrough_mode_cb)(uint8_t vdev_id, bool is_up);
++#endif
+ };
+ 
+ #endif /* #if !defined( __SMEINTERNAL_H ) */
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/common/sme_api.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/common/sme_api.c
+index f604a1c685bf0ae7a775f6a8587d8ca473a1554d..c34d66e8a0bab0d3eb91aab35687ce3cd3f6e6da 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/common/sme_api.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/common/sme_api.c
+@@ -12941,23 +12941,32 @@ uint32_t sme_get_wni_dot11_mode(mac_handle_t mac_handle)
+ }
+ 
+ /**
+- * sme_create_mon_session() - post message to create PE session for monitormode
+- * operation
++ * sme_create_pe_session() - post message to create PE session
+  * @mac_handle: Opaque handle to the global MAC context
+  * @bssid: pointer to bssid
+  * @vdev_id: sme session id
++ * @op_mode: operating mode
+  *
+  * Return: QDF_STATUS_SUCCESS on success, non-zero error code on failure.
+  */
+-QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, uint8_t *bss_id,
+-				  uint8_t vdev_id)
++QDF_STATUS sme_create_pe_session(mac_handle_t mac_handle, uint8_t *bss_id,
++				 uint8_t vdev_id, enum QDF_OPMODE op_mode)
+ {
+ 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+ 	struct sir_create_session *msg;
+ 
+ 	msg = qdf_mem_malloc(sizeof(*msg));
+ 	if (msg) {
+-		msg->type = eWNI_SME_MON_INIT_SESSION;
++		if (op_mode == QDF_MONITOR_MODE) {
++			msg->type = eWNI_SME_MON_INIT_SESSION;
++		} else if (op_mode == QDF_PASSTHRU_MODE) {
++			msg->type = eWNI_SME_PASSTHRU_INIT_SESSION;
++		} else {
++			sme_err("op_mode:%d not supported", op_mode);
++			qdf_mem_free(msg);
++			return status;
++		}
++
+ 		msg->vdev_id = vdev_id;
+ 		msg->msg_len = sizeof(*msg);
+ 		qdf_mem_copy(msg->bss_id.bytes, bss_id, QDF_MAC_ADDR_SIZE);
+@@ -12966,14 +12975,31 @@ QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, uint8_t *bss_id,
+ 	return status;
+ }
+ 
+-QDF_STATUS sme_delete_mon_session(mac_handle_t mac_handle, uint8_t vdev_id)
++QDF_STATUS sme_create_mon_session(mac_handle_t mac_handle, uint8_t *bss_id,
++				  uint8_t vdev_id)
++{
++	return sme_create_pe_session(mac_handle, bss_id, vdev_id,
++				     QDF_MONITOR_MODE);
++}
++
++QDF_STATUS sme_delete_pe_session(mac_handle_t mac_handle, uint8_t vdev_id,
++				 enum QDF_OPMODE op_mode)
+ {
+ 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+ 	struct sir_delete_session *msg;
+ 
+ 	msg = qdf_mem_malloc(sizeof(*msg));
+ 	if (msg) {
+-		msg->type = eWNI_SME_MON_DEINIT_SESSION;
++		if (op_mode == QDF_MONITOR_MODE) {
++			msg->type = eWNI_SME_MON_DEINIT_SESSION;
++		} else if (op_mode == QDF_PASSTHRU_MODE) {
++			msg->type = eWNI_SME_PASSTHRU_DEINIT_SESSION;
++		} else {
++			sme_err("op_mode:%d not supported", op_mode);
++			qdf_mem_free(msg);
++			return status;
++		}
++
+ 		msg->vdev_id = vdev_id;
+ 		msg->msg_len = sizeof(*msg);
+ 		status = umac_send_mb_message_to_mac(msg);
+@@ -12982,6 +13008,11 @@ QDF_STATUS sme_delete_mon_session(mac_handle_t mac_handle, uint8_t vdev_id)
+ 	return status;
+ }
+ 
++QDF_STATUS sme_delete_mon_session(mac_handle_t mac_handle, uint8_t vdev_id)
++{
++	return sme_delete_pe_session(mac_handle, vdev_id, QDF_MONITOR_MODE);
++}
++
+ void
+ sme_set_del_peers_ind_callback(mac_handle_t mac_handle,
+ 			       void (*callback)(struct wlan_objmgr_psoc *psoc,
+@@ -16935,10 +16966,74 @@ QDF_STATUS sme_get_ani_level(mac_handle_t mac_handle, uint32_t *freqs,
+ #endif /* FEATURE_ANI_LEVEL_REQUEST */
+ 
+ #ifdef FEATURE_MONITOR_MODE_SUPPORT
++static inline
++void sme_store_monitor_mode_cb(struct mac_context *mac,
++			     void (*monitor_mode_cb)(uint8_t vdev_id,
++						     bool is_up))
++{
++	mac->sme.monitor_mode_cb = monitor_mode_cb;
++}
+ 
+-QDF_STATUS sme_set_monitor_mode_cb(mac_handle_t mac_handle,
+-				   void (*monitor_mode_cb)(uint8_t vdev_id,
+-							   bool is_up))
++static inline
++void sme_invoke_monitor_mode_cb(struct mac_context *mac, uint8_t vdev_id,
++				bool is_up)
++{
++	if (mac->sme.monitor_mode_cb)
++		mac->sme.monitor_mode_cb(vdev_id, is_up);
++}
++
++#else
++static inline
++void sme_store_monitor_mode_cb(struct mac_context *mac,
++			     void (*monitor_mode_cb)(uint8_t vdev_id,
++						     bool is_up))
++{
++}
++
++static inline
++void sme_invoke_monitor_mode_cb(struct mac_context *mac, uint8_t vdev_id,
++				bool is_up)
++{
++}
++#endif
++
++#ifdef DRIVER_PASSTHRU_MODE
++static inline
++void sme_set_passthrough_mode_cb(struct mac_context *mac,
++				 void (*passthrough_mode_cb)(uint8_t vdev_id,
++							     bool is_up))
++{
++	mac->sme.passthrough_mode_cb = passthrough_mode_cb;
++}
++
++static inline
++void sme_invoke_passthrough_mode_cb(struct mac_context *mac, uint8_t vdev_id,
++				    bool is_up)
++{
++	if (mac->sme.passthrough_mode_cb)
++		mac->sme.passthrough_mode_cb(vdev_id, is_up);
++}
++#else
++static inline
++void sme_set_passthrough_mode_cb(struct mac_context *mac,
++				 void (*passthrough_mode_cb)(uint8_t vdev_id,
++							     bool is_up))
++{
++}
++
++static inline
++void sme_invoke_passthrough_mode_cb(struct mac_context *mac, uint8_t vdev_id,
++				    bool is_up)
++{
++}
++#endif
++
++#if defined(FEATURE_MONITOR_MODE_SUPPORT) || defined(DRIVER_PASSTHRU_MODE)
++QDF_STATUS sme_set_op_mode_cb(mac_handle_t mac_handle,
++			      void (*monitor_mode_cb)(uint8_t vdev_id,
++						      bool is_up),
++			      void (*passthrough_mode_cb)(uint8_t vdev_id,
++							  bool is_up))
+ {
+ 	QDF_STATUS qdf_status;
+ 	struct mac_context *mac = MAC_CONTEXT(mac_handle);
+@@ -16948,27 +17043,41 @@ QDF_STATUS sme_set_monitor_mode_cb(mac_handle_t mac_handle,
+ 		sme_err("Failed to acquire sme lock; status: %d", qdf_status);
+ 		return qdf_status;
+ 	}
+-	mac->sme.monitor_mode_cb = monitor_mode_cb;
++
++	sme_store_monitor_mode_cb(mac, monitor_mode_cb);
++	sme_set_passthrough_mode_cb(mac, passthrough_mode_cb);
+ 	sme_release_global_lock(&mac->sme);
+ 
+ 	return qdf_status;
+ }
+ 
++QDF_STATUS sme_set_monitor_mode_cb(mac_handle_t mac_handle,
++				   void (*monitor_mode_cb)(uint8_t vdev_id,
++						   bool is_up))
++{
++	return sme_set_op_mode_cb(mac_handle, monitor_mode_cb, NULL);
++}
++
+ QDF_STATUS sme_process_monitor_mode_vdev_evt(uint8_t vdev_id, bool is_up)
+ {
+ 	mac_handle_t mac_handle;
+ 	struct mac_context *mac;
++	enum QDF_OPMODE op_mode;
+ 
+ 	mac_handle = cds_get_context(QDF_MODULE_ID_SME);
+ 	if (!mac_handle)
+ 		return QDF_STATUS_E_INVAL;
+ 
+ 	mac = MAC_CONTEXT(mac_handle);
++	op_mode = wlan_get_opmode_from_vdev_id(mac->pdev, vdev_id);
+ 
+-	if (mac->sme.monitor_mode_cb)
+-		mac->sme.monitor_mode_cb(vdev_id, is_up);
+-	else {
+-		sme_warn_rl("monitor_mode_cb is not registered");
++	if (op_mode == QDF_MONITOR_MODE) {
++		sme_invoke_monitor_mode_cb(mac, vdev_id, is_up);
++	} else if (op_mode == QDF_PASSTHRU_MODE) {
++		sme_invoke_passthrough_mode_cb(mac, vdev_id, is_up);
++	} else {
++		sme_warn_rl("no callback registered for mode:%d",
++			    op_mode);
+ 		return QDF_STATUS_E_FAILURE;
+ 	}
+ 
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/csr/csr_api_roam.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/csr/csr_api_roam.c
+index f3e9834254ef40be5b264508ac8a4c6f3153e194..c33b90bd1444a3431d1916c660f42eb8e5b77150 100644
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/csr/csr_api_roam.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/sme/src/csr/csr_api_roam.c
+@@ -6356,6 +6356,7 @@ void csr_get_vdev_type_nss(enum QDF_OPMODE dev_mode, uint8_t *nss_2g,
+ 
+ 	switch (dev_mode) {
+ 	case QDF_STA_MODE:
++	case QDF_PASSTHRU_MODE:
+ 		*nss_2g = mac_ctx->vdev_type_nss_2g.sta;
+ 		*nss_5g = mac_ctx->vdev_type_nss_5g.sta;
+ 		break;
