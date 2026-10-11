@@ -135,7 +135,7 @@ class SourceTests(unittest.TestCase):
             for line in text.splitlines():
                 if line.startswith('diff --git a/'):
                     touched.add(line.split(' b/', 1)[1])
-        self.assertEqual(len(touched), 18)
+        self.assertEqual(len(touched), 24)
         self.assertFalse(any('defconfig' in p or p.endswith('Kbuild') for p in touched))
 
 
