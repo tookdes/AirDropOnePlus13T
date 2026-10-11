@@ -1,0 +1,117 @@
+From: op13t-wonder backport workbench <noreply@localhost>
+Subject: [PATCH 5/5] qdf/dp/fw-api: add WonderTap mode primitives (dormant)
+
+Target: OnePlus 13T vendor modules 6a196f79f77acd55cf302e1696c038e4cad99254
+Donor: OnePlus 15 vendor modules 5ab2a689ff87d7d28c511f1762cf41c1b90d965a
+
+Do not enable DRIVER_PASSTHRU_MODE or use WMI passthru vdev yet.
+No firmware is bundled; compilation and radio bring-up are separate gates.
+
+diff --git a/vendor/qcom/opensource/wlan/fw-api/fw/wmi_unified.h b/vendor/qcom/opensource/wlan/fw-api/fw/wmi_unified.h
+--- a/vendor/qcom/opensource/wlan/fw-api/fw/wmi_unified.h
++++ b/vendor/qcom/opensource/wlan/fw-api/fw/wmi_unified.h
+@@ -17202,6 +17202,9 @@
+ #define WMI_VDEV_TYPE_NDI        0x7
+ 
+ #define WMI_VDEV_TYPE_MESH_POINT 0x8
++
++/* Qualcomm WonderTap passthrough vdev; requires firmware support. */
++#define WMI_VDEV_TYPE_WIFI_PASSTHRU 0x9
+ 
+ /*
+  * Param values to be sent for WMI_VDEV_PARAM_SGI command
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn_struct.h b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn_struct.h
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn_struct.h
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/inc/cdp_txrx_cmn_struct.h
+@@ -770,6 +770,7 @@
+  * @wlan_op_mode_monitor: Monitor mode
+  * @wlan_op_mode_ocb: OCB mode
+  * @wlan_op_mode_ndi: NDI mode
++ * @wlan_op_mode_passthru: Passthrough mode
+  */
+ enum wlan_op_mode {
+ 	wlan_op_mode_unknown,
+@@ -779,6 +780,7 @@
+ 	wlan_op_mode_monitor,
+ 	wlan_op_mode_ocb,
+ 	wlan_op_mode_ndi,
++	wlan_op_mode_passthru,
+ };
+ 
+ /**
+@@ -1495,6 +1497,7 @@
+  * @cdp_vdev_param_mon_freq: set monitor frequency
+  * @cdp_vdev_param_monitor_chan: monitor channel
+  * @cdp_vdev_paran_wds_ext_ap_bridge: enable/disable ap_bridge for wds_ext peers
++ * @cdp_passthru_vdev_freq: passthru vdev frequency
+  *
+  * @cdp_pdev_param_dbg_snf: Enable debug sniffer feature
+  * @cdp_pdev_param_bpr_enable: Enable bcast probe feature
+@@ -1610,6 +1613,7 @@
+ 	qdf_freq_t cdp_vdev_param_mon_freq;
+ 	int cdp_vdev_param_monitor_chan;
+ 	bool cdp_vdev_paran_wds_ext_ap_bridge;
++	qdf_freq_t cdp_passthru_vdev_freq;
+ 
+ 	/* pdev params */
+ 	bool cdp_pdev_param_cptr_latcy;
+@@ -1797,6 +1801,7 @@
+  * @CDP_MONITOR_CHANNEL: monitor channel
+  * @CDP_MONITOR_FREQUENCY: monitor frequency
+  * @CDP_EAPOL_OVER_CONTROL_PORT_DISABLE: Disable eapol over control port
++ * @CDP_VDEV_SET_PASSTHRU_FREQ: set passthru vdev frequency
+  */
+ enum cdp_vdev_param_type {
+ 	CDP_ENABLE_NAWDS,
+@@ -1852,6 +1857,7 @@
+ 	CDP_MONITOR_CHANNEL,
+ 	CDP_MONITOR_FREQUENCY,
+ 	CDP_EAPOL_OVER_CONTROL_PORT_DISABLE,
++	CDP_VDEV_SET_PASSTHRU_FREQ,
+ };
+ 
+ /**
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_types.h b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_types.h
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_types.h
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_types.h
+@@ -754,6 +754,7 @@
+  * @QDF_AHDEMO_MODE: AHDEMO mode
+  * @QDF_TDLS_MODE: TDLS device mode
+  * @QDF_NAN_DISC_MODE: NAN Discovery device mode
++ * @QDF_PASSTHRU_MODE: Passthrough mode
+  * @QDF_MAX_NO_OF_MODE: Max place holder
+  *
+  * These are generic IDs that identify the various roles
+@@ -777,6 +778,7 @@
+ 	QDF_AHDEMO_MODE,
+ 	QDF_TDLS_MODE,
+ 	QDF_NAN_DISC_MODE,
++	QDF_PASSTHRU_MODE,
+ 
+ 	/* Add new OP Modes to qdf_opmode_str as well */
+ 
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_types.c b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_types.c
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_types.c
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/src/qdf_types.c
+@@ -61,6 +61,8 @@
+ 		return "TDLS";
+ 	case QDF_NAN_DISC_MODE:
+ 		return "NAN";
++	case QDF_PASSTHRU_MODE:
++		return "PASSTHRU";
+ 	default:
+ 		return "Invalid operating mode";
+ 	}
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mgr_utils_api.c b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mgr_utils_api.c
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mgr_utils_api.c
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mgr_utils_api.c
+@@ -112,6 +112,9 @@
+ 		break;
+ 	case QDF_NDI_MODE:
+ 		cdp_txrx_opmode = wlan_op_mode_ndi;
++		break;
++	case QDF_PASSTHRU_MODE:
++		cdp_txrx_opmode = wlan_op_mode_passthru;
+ 		break;
+ 	default:
+ 		cdp_txrx_opmode = wlan_op_mode_unknown;
