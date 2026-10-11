@@ -1,0 +1,31 @@
+name: Prepare public offline host tools
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/host-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  packages:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm
+    timeout-minutes: 15
+    steps:
+      - name: Download public Debian build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          mkdir -p /tmp/op13t-host-tools
+          cd /tmp/op13t-host-tools
+          apt-get download flex bison m4 bc libfl2 libfl-dev libelf1 libelf-dev libssl3 libssl-dev zlib1g zlib1g-dev pahole libdw1 libbpf1 libtinfo5 libtinfo6 rsync cpio zstd
+          sha256sum *.deb > SHA256SUMS
+          apt-cache policy flex bison m4 bc pahole > versions.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: op13t-public-host-tools
+          path: /tmp/op13t-host-tools/
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
