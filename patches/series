@@ -2,3 +2,4 @@
 0002-hdd-wondertap-dormant-import.patch
 0003-hdd-propagate-setup-errors.patch
 0004-wonder-initialization-and-locking.patch
+0005-qdf-dp-wmi-passthru-mode-primitives.patch
