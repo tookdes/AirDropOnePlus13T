@@ -28,7 +28,7 @@ jobs:
           git -C "$RUNNER_TEMP/target" fetch --depth=1 origin 6a196f79f77acd55cf302e1696c038e4cad99254
           git -C "$RUNNER_TEMP/target" checkout --detach FETCH_HEAD
           test "$(git -C "$RUNNER_TEMP/target" rev-parse HEAD)" = 6a196f79f77acd55cf302e1696c038e4cad99254
-      - name: Apply nine-patch series and reverse to untouched tree
+      - name: Apply ten-patch series and reverse to untouched tree
         shell: bash
         run: |
           set -euo pipefail
@@ -36,7 +36,7 @@ jobs:
           root="$PWD"
           python3 tools/validate_mode_patch.py --target "$target"
           mapfile -t series < <(grep -vE '^[[:space:]]*(#|$)' patches/series)
-          test "${#series[@]}" -eq 9
+          test "${#series[@]}" -eq 10
           for p in "${series[@]}"; do
             test -f "patches/$p"
             git -C "$target" apply --check "$root/patches/$p"
@@ -52,7 +52,7 @@ jobs:
             git -C "$target" apply --reverse "$root/patches/${series[i]}"
           done
           test -z "$(git -C "$target" status --porcelain)"
-          echo "Nine patches apply cleanly to exact 13T source; complete dependency closure and target module build are NOT yet proven"
+          echo "Ten patches apply cleanly to exact 13T source; complete dependency closure and target module build are NOT yet proven"
       - name: Upload source-only patch verification
         uses: actions/upload-artifact@v4
         with:
