@@ -1,0 +1,79 @@
+name: Export exact compiler in bounded artifacts
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/toolchain-parts.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  split:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: op13t-public-toolchain
+          github-token: ${{ github.token }}
+          run-id: 38105859314
+          path: ${{ runner.temp }}/compiler-input
+      - name: Verify and split public compiler archive
+        id: split
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/compiler-input"
+          sha256sum -c SHA256SUMS
+          mkdir -p "$RUNNER_TEMP/compiler-tree" "$RUNNER_TEMP/compiler-parts"
+          tar -xzf toolchain.tar.gz -C "$RUNNER_TEMP/compiler-tree" toolchain/clang-r510928
+          "$RUNNER_TEMP/compiler-tree/toolchain/clang-r510928/bin/clang" --version > compiler.txt
+          grep -q '11368308' compiler.txt
+          grep -q 'r510928' compiler.txt
+          tar -czf "$RUNNER_TEMP/compiler-parts/compiler.tar.gz" -C "$RUNNER_TEMP/compiler-tree" toolchain/clang-r510928
+          cd "$RUNNER_TEMP/compiler-parts"
+          sha256sum compiler.tar.gz > COMPLETE_SHA256SUM
+          split -b 350M -d -a 2 compiler.tar.gz compiler.part-
+          sha256sum compiler.part-* > PART_SHA256SUMS
+          cp "$RUNNER_TEMP/compiler-input/revision.txt" "$RUNNER_TEMP/compiler-input/compiler.txt" .
+          echo "parts=$(find . -name 'compiler.part-*' -type f | wc -l)" >> "$GITHUB_OUTPUT"
+          rm compiler.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: op13t-compiler-metadata
+          path: |
+            ${{ runner.temp }}/compiler-parts/*SHA256SUM*
+            ${{ runner.temp }}/compiler-parts/*.txt
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: op13t-compiler-part-00
+          path: ${{ runner.temp }}/compiler-parts/compiler.part-00
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: steps.split.outputs.parts >= 2
+        with:
+          name: op13t-compiler-part-01
+          path: ${{ runner.temp }}/compiler-parts/compiler.part-01
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: steps.split.outputs.parts >= 3
+        with:
+          name: op13t-compiler-part-02
+          path: ${{ runner.temp }}/compiler-parts/compiler.part-02
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: steps.split.outputs.parts >= 4
+        with:
+          name: op13t-compiler-part-03
+          path: ${{ runner.temp }}/compiler-parts/compiler.part-03
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
