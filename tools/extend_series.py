@@ -111,7 +111,14 @@ def extend() -> dict:
         raise ValueError('Reviewed MAC/SME passthru patch changed without review')
     if len([ln for ln in mac_sme_data.splitlines() if ln.startswith(b'diff --git a/')]) != 12:
         raise ValueError('MAC/SME passthru patch must change exactly twelve paths')
-    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n'+dp_sem_name+'\n'+mac_sme_name+'\n')
+    channel_name = '0010-channel-wma-mlme-passthru.patch'
+    channel_data = (ROOT/'patches'/channel_name).read_bytes()
+    channel_blob = '8661e27a949ccb3169a449c65b53c578b94dc534'
+    if blob_hash(channel_data) != channel_blob:
+        raise ValueError('Reviewed channel/WMA/MLME patch changed without review')
+    if len([ln for ln in channel_data.splitlines() if ln.startswith(b'diff --git a/')]) != 4:
+        raise ValueError('Channel/WMA/MLME patch must change exactly four paths')
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n'+dp_sem_name+'\n'+mac_sme_name+'\n'+channel_name+'\n')
     result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
