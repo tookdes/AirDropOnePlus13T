@@ -78,8 +78,10 @@ def extend() -> dict:
         assert p.read_bytes() == raw
         assert not run(repo, 'status', '--porcelain')
     series = ROOT/'patches/series'
-    series.write_text(series.read_text()+NAME+'\n')
-    result = {'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
+    from validate_mode_patch import validate, PATCH as MODE_PATCH
+    checked = validate()
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n')
+    result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
     (ROOT/'evidence/generic-patch-validation.json').write_text(json.dumps(result, indent=2)+'\n')
