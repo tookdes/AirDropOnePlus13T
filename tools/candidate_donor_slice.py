@@ -68,6 +68,9 @@ def reproduce(target: Path, output: Path, seed: Path,
         raise ValueError('Missing Qualcomm target source')
     (output/PREFIX).parent.mkdir(parents=True,exist_ok=True)
     shutil.copytree(target/PREFIX,output/PREFIX,symlinks=True)
+    # Headers for external IPA integration are part of the same target repo.
+    dataipa='vendor/qcom/opensource/dataipa'
+    shutil.copytree(target/dataipa, output/dataipa, symlinks=True)
     # OPlus generic Wonder is separate from the Qualcomm tree.
     wonder='vendor/oplus/kernel/wifi/wonder/wondertap.c'
     (output/wonder).parent.mkdir(parents=True,exist_ok=True)
