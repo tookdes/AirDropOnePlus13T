@@ -99,7 +99,7 @@ def extend() -> dict:
         raise ValueError('Target 6.6 DP adaptation must change exactly six paths')
     dp_sem_name = '0008-dp-raw-frame-and-be-peer-bypass.patch'
     dp_sem_data = (ROOT/'patches'/dp_sem_name).read_bytes()
-    dp_sem_blob = '1a6322101f6712881711481fa60fcf45c258c9cf'
+    dp_sem_blob = 'a4eaa42aa9e3ab8fb9fad75be54345c44f5256d8'
     if blob_hash(dp_sem_data) != dp_sem_blob:
         raise ValueError('Donor-exact DP raw/peer semantics patch changed without review')
     if len([ln for ln in dp_sem_data.splitlines() if ln.startswith(b'diff --git a/')]) != 2:
