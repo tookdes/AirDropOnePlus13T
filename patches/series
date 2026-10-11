@@ -7,3 +7,4 @@
 0007-dp-tx-policy-6.6-passthru.patch
 0008-dp-raw-frame-and-be-peer-bypass.patch
 0009-mac-sme-passthru-session-control.patch
+0010-channel-wma-mlme-passthru.patch
