@@ -1,0 +1,62 @@
+name: Apply all WonderTap patches to exact 13T vendor source
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'patches/**'
+      - 'tools/validate_mode_patch.py'
+      - '.github/workflows/stage-b-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: op13t-b-source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned public 13T source, never private evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/target"
+          git -C "$RUNNER_TEMP/target" init -q
+          git -C "$RUNNER_TEMP/target" remote add origin https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750.git
+          git -C "$RUNNER_TEMP/target" fetch --depth=1 origin 6a196f79f77acd55cf302e1696c038e4cad99254
+          git -C "$RUNNER_TEMP/target" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/target" rev-parse HEAD)" = 6a196f79f77acd55cf302e1696c038e4cad99254
+      - name: Apply five-patch series and reverse to untouched tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/target"
+          root="$PWD"
+          python3 tools/validate_mode_patch.py --target "$target"
+          mapfile -t series < <(grep -vE '^[[:space:]]*(#|$)' patches/series)
+          test "${#series[@]}" -eq 5
+          for p in "${series[@]}"; do
+            test -f "patches/$p"
+            git -C "$target" apply --check "$root/patches/$p"
+            git -C "$target" apply "$root/patches/$p"
+          done
+          git -C "$target" add -A
+          git -C "$target" diff --cached --check
+          git -C "$target" diff --cached --stat
+          git -C "$target" diff --cached --numstat > "$root/stage-b-source-numstat.txt"
+          git -C "$target" reset -q
+          for ((i="${#series[@]}"-1;i>=0;i--)); do
+            git -C "$target" apply --reverse --check "$root/patches/${series[i]}"
+            git -C "$target" apply --reverse "$root/patches/${series[i]}"
+          done
+          test -z "$(git -C "$target" status --porcelain)"
+          echo "Five patches apply cleanly to exact 13T source; complete dependency closure and target module build are NOT yet proven"
+      - name: Upload source-only patch verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-wonder-patch-application
+          path: stage-b-source-numstat.txt
+          retention-days: 14
+          if-no-files-found: error
