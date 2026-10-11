@@ -59,6 +59,14 @@ jobs:
             ${{ runner.temp }}/op13t-stage-a/stage-a-result.json
           retention-days: 14
           if-no-files-found: error
+      - name: Preserve public-source GKI config for diagnosing CI drift
+        if: always()
+        shell: bash
+        run: |
+          f="$RUNNER_TEMP/op13t-stage-a/kernel-out/.config"
+          if test -f "$f"; then
+            cp "$f" "$RUNNER_TEMP/op13t-stage-a/generated-gki-config.txt"
+          fi
       - name: Preserve build log even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,6 +74,7 @@ jobs:
           name: op13t-stage-a-build-log
           path: |
             ${{ runner.temp }}/op13t-stage-a/build.log
+            ${{ runner.temp }}/op13t-stage-a/generated-gki-config.txt
             ${{ runner.temp }}/op13t-stage-a/stage-a-result.json
           retention-days: 14
           if-no-files-found: warn
