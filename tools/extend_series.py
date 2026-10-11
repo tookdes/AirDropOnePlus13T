@@ -104,7 +104,14 @@ def extend() -> dict:
         raise ValueError('Donor-exact DP raw/peer semantics patch changed without review')
     if len([ln for ln in dp_sem_data.splitlines() if ln.startswith(b'diff --git a/')]) != 2:
         raise ValueError('DP raw/peer semantics patch must change exactly two approved paths')
-    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n'+dp_sem_name+'\n')
+    mac_sme_name = '0009-mac-sme-passthru-session-control.patch'
+    mac_sme_data = (ROOT/'patches'/mac_sme_name).read_bytes()
+    mac_sme_blob = '8dca138ca11324b8844b539907a7f5c1f583180b'
+    if blob_hash(mac_sme_data) != mac_sme_blob:
+        raise ValueError('Reviewed MAC/SME passthru patch changed without review')
+    if len([ln for ln in mac_sme_data.splitlines() if ln.startswith(b'diff --git a/')]) != 12:
+        raise ValueError('MAC/SME passthru patch must change exactly twelve paths')
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n'+dp_sem_name+'\n'+mac_sme_name+'\n')
     result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
