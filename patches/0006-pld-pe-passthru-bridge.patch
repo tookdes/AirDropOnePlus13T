@@ -1,0 +1,135 @@
+diff --git a/vendor/qcom/opensource/wlan/platform/inc/cnss2.h b/vendor/qcom/opensource/wlan/platform/inc/cnss2.h
+--- a/vendor/qcom/opensource/wlan/platform/inc/cnss2.h
++++ b/vendor/qcom/opensource/wlan/platform/inc/cnss2.h
+@@ -350,4 +350,5 @@
+ 						    unsigned int *cpumask);
+ extern void cnss_get_cpumask_for_wlan_tx_comp_interrupts(struct device *dev,
+ 							 unsigned int *cpumask);
++extern int cnss_set_vendor_wonder_priv_data(const void *priv_data);
+ #endif /* _NET_CNSS2_H */
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/utils/host_diag_log/inc/host_diag_core_event.h b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/utils/host_diag_log/inc/host_diag_core_event.h
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/utils/host_diag_log/inc/host_diag_core_event.h
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/utils/host_diag_log/inc/host_diag_core_event.h
+@@ -998,6 +998,7 @@
+ 	WIFI_POWER_EVENT_WAKELOCK_RTPM_TPUT_POLICY,
+ 	WIFI_POWER_EVENT_WAKELOCK_DYN_MAC_ADDR_UPDATE,
+ 	WIFI_POWER_EVENT_WAKELOCK_OPT_WIFI_DP,
++	WIFI_POWER_EVENT_WAKELOCK_PASSTHRU,
+ };
+ 
+ /* The length of interface name should >= IFNAMSIZ */
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/inc/pld_common.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/inc/pld_common.h
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/inc/pld_common.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/inc/pld_common.h
+@@ -2229,4 +2229,13 @@
+ {
+ }
+ #endif
++#ifdef DRIVER_PASSTHRU_MODE
++int pld_set_vendor_wonder_priv_data(struct device *dev, const void *priv_data);
++#else
++static inline int pld_set_vendor_wonder_priv_data(struct device *dev,
++                                                   const void *priv_data)
++{
++    return 0;
++}
+ #endif
++#endif
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_pcie.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_pcie.h
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_pcie.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_pcie.h
+@@ -1122,5 +1122,11 @@
+ {
+ }
+ #endif /* CONFIG_DT_CPU_MASK_DP_INTR */
+-#endif
+-#endif
++#ifdef DRIVER_PASSTHRU_MODE
++static inline int pld_pcie_set_vendor_wonder_priv_data(const void *priv_data)
++{
++    return cnss_set_vendor_wonder_priv_data(priv_data);
++}
++#endif
++#endif
++#endif
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_common.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_common.c
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_common.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/pld/src/pld_common.c
+@@ -3000,3 +3000,12 @@
+ 	}
+ }
+ #endif
++
++#ifdef DRIVER_PASSTHRU_MODE
++int pld_set_vendor_wonder_priv_data(struct device *dev, const void *priv_data)
++{
++    if (pld_get_bus_type(dev) == PLD_BUS_TYPE_PCIE)
++        return pld_pcie_set_vendor_wonder_priv_data(priv_data);
++    return -EOPNOTSUPP;
++}
++#endif
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_api.h b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_api.h
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_api.h
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/include/lim_api.h
+@@ -57,6 +57,8 @@
+ #define LIM_IS_P2P_DEVICE_GO(pe_session)     (GET_LIM_SYSTEM_ROLE(pe_session) == eLIM_P2P_DEVICE_GO)
+ #define LIM_IS_NDI_ROLE(pe_session) \
+ 		(GET_LIM_SYSTEM_ROLE(pe_session) == eLIM_NDI_ROLE)
++#define LIM_IS_PASSTHRU_ROLE(pe_session) \
++		(GET_LIM_SYSTEM_ROLE(pe_session) == eLIM_PASSTHRU_ROLE)
+ /* gLimSmeState */
+ #define GET_LIM_SME_STATE(mac)                 (mac->lim.gLimSmeState)
+ #define SET_LIM_SME_STATE(mac, state)          (mac->lim.gLimSmeState = state)
+@@ -457,6 +459,13 @@
+ void lim_mon_deinit_session(struct mac_context *mac_ptr,
+ 			    struct sir_delete_session *msg);
+ 
++#ifdef DRIVER_PASSTHRU_MODE
++void lim_passthrough_init_session(struct mac_context *mac_ptr,
++                                  struct sir_create_session *msg);
++void lim_passthrough_deinit_session(struct mac_context *mac_ptr,
++                                    struct sir_delete_session *msg);
++#endif
++
+ #define limGetQosMode(pe_session, pVal) (*(pVal) = (pe_session)->limQosEnabled)
+ #define limGetWmeMode(pe_session, pVal) (*(pVal) = (pe_session)->limWmeEnabled)
+ #define limGetWsmMode(pe_session, pVal) (*(pe_session)->limWsmEnabled)
+diff --git a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_api.c b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
+--- a/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
++++ b/vendor/qcom/opensource/wlan/qcacld-3.0/core/mac/src/pe/lim/lim_api.c
+@@ -3656,6 +3656,35 @@
+ 	}
+ }
+ 
++#ifdef DRIVER_PASSTHRU_MODE
++void lim_passthrough_init_session(struct mac_context *mac_ptr,
++                                  struct sir_create_session *msg)
++{
++    uint8_t session_id;
++    struct pe_session *session;
++
++    session = pe_create_session(mac_ptr, msg->bss_id.bytes,
++                                &session_id,
++                                mac_ptr->lim.max_sta_of_pe_session,
++                                eSIR_PASSTHRU_MODE, msg->vdev_id);
++    if (!session)
++        pe_err("Passthrough mode: failed creating PE session for "
++               QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(msg->bss_id.bytes));
++}
++
++void lim_passthrough_deinit_session(struct mac_context *mac_ptr,
++                                    struct sir_delete_session *msg)
++{
++    struct pe_session *session = pe_find_session_by_vdev_id(mac_ptr, msg->vdev_id);
++
++    if (session && LIM_IS_PASSTHRU_ROLE(session)) {
++        wlan_vdev_mlme_sm_deliver_evt(session->vdev,
++                                      WLAN_VDEV_SM_EV_DOWN, 0, NULL);
++        pe_delete_session(mac_ptr, session);
++    }
++}
++#endif
++
+ /**
+  * lim_update_ext_cap_ie() - Update Extended capabilities IE(if present)
+  *          with capabilities of Fine Time measurements(FTM) if set in driver
