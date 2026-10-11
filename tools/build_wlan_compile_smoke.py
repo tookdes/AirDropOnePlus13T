@@ -67,6 +67,7 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
          'KERNELRELEASE='+TARGET_RELEASE,'-j2',
          'M='+str(work),'WLAN_ROOT='+str(work),'MODNAME='+MODNAME,
          'CONFIG_QCA_CLD_WLAN=m','CONFIG_QCA_CLD_WLAN_PROFILE='+PROFILE,
+         'CONFIG_IPA_OUT_OF_TREE=y',
          'KBUILD_MODPOST_WARN=1','KCFLAGS='+kcflags]
     if override: cmd.append('WLAN_CFG_OVERRIDE='+override)
     cmd.append('modules')
