@@ -1,0 +1,35 @@
+name: Resolve exact GKI configuration prerequisites
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/gki-host-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download pahole 1.25 and aarch64 user-link sysroot
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          mkdir -p "$RUNNER_TEMP/gki-host-tools" "$RUNNER_TEMP/gki-tool-check"
+          cd "$RUNNER_TEMP/gki-host-tools"
+          apt-get download pahole libc6-arm64-cross libc6-dev-arm64-cross linux-libc-dev-arm64-cross libgcc-13-dev-arm64-cross libgcc-s1-arm64-cross gcc-13-cross-base
+          for package in *.deb; do
+            dpkg-deb -x "$package" "$RUNNER_TEMP/gki-tool-check"
+          done
+          "$RUNNER_TEMP/gki-tool-check/usr/bin/pahole" --version | tee pahole-version.txt
+          grep -qx 'v1.25' pahole-version.txt
+          dpkg-deb -f pahole*.deb Package Version Architecture > packages.txt
+          sha256sum *.deb > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: op13t-gki-config-prerequisites
+          path: ${{ runner.temp }}/gki-host-tools/
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
