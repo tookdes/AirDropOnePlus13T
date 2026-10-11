@@ -1,0 +1,58 @@
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_tx.c
+@@ -1341,7 +1341,8 @@ struct dp_tx_desc_s *dp_tx_prepare_desc_single(struct dp_vdev *vdev,
+ 
+ 	/* Initialize the SW tx descriptor */
+ 	tx_desc->nbuf = nbuf;
+-	tx_desc->frm_type = dp_tx_frm_std;
++	tx_desc->frm_type = (wlan_op_mode_passthru == vdev->opmode) ?
++				dp_tx_frm_raw : dp_tx_frm_std;
+ 	tx_desc->tx_encap_type = ((tx_exc_metadata &&
+ 		(tx_exc_metadata->tx_encap_type != CDP_INVALID_TX_ENCAP_TYPE)) ?
+ 		tx_exc_metadata->tx_encap_type : vdev->tx_encap_type);
+diff --git a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
+--- a/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
++++ b/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_tx.c
+@@ -357,21 +357,23 @@ void dp_tx_process_htt_completion_be(struct dp_soc *soc,
+ 	} else {
+ 		ts.peer_id = HTT_INVALID_PEER;
+ 		ts.tid = HTT_INVALID_TID;
+ 	}
+-	txrx_peer = dp_txrx_peer_get_ref_by_id(soc, ts.peer_id,
+-					       &txrx_ref_handle,
+-					       DP_MOD_ID_HTT_COMP);
+-	if (qdf_likely(txrx_peer)) {
+-		if (qdf_unlikely(qdf_nbuf_is_ipv4_eapol_pkt(tx_desc->nbuf))) {
+-			eapol_type = qdf_nbuf_get_eapol_subtype(tx_desc->nbuf);
+-			pairwise = (eapol_type == QDF_PROTO_EAPOL_G1 ||
+-				    eapol_type == QDF_PROTO_EAPOL_G2) ? 0 : 1;
+-			dp_tx_update_eapol_comp_status_stats(soc, vdev,
+-							     tx_desc->nbuf,
+-							     txrx_peer, 0,
+-							     tx_status,
+-							     pairwise);
++
++	if (qdf_likely(wlan_op_mode_passthru != vdev->opmode)) {
++		txrx_peer = dp_txrx_peer_get_ref_by_id(soc, ts.peer_id,
++						       &txrx_ref_handle,
++						       DP_MOD_ID_HTT_COMP);
++		if (qdf_likely(txrx_peer)) {
++			if (qdf_unlikely(qdf_nbuf_is_ipv4_eapol_pkt(tx_desc->nbuf))) {
++				eapol_type = qdf_nbuf_get_eapol_subtype(tx_desc->nbuf);
++				pairwise = (eapol_type == QDF_PROTO_EAPOL_G1 ||
++					    eapol_type == QDF_PROTO_EAPOL_G2) ? 0 : 1;
++				dp_tx_update_eapol_comp_status_stats(soc, vdev,
++								     tx_desc->nbuf,
++								     txrx_peer, 0,
++								     tx_status,
++								     pairwise);
++			}
++			dp_txrx_peer_unref_delete(txrx_ref_handle,
++						  DP_MOD_ID_HTT_COMP);
+ 		}
+-		dp_txrx_peer_unref_delete(txrx_ref_handle,
+-					  DP_MOD_ID_HTT_COMP);
+ 	}
+ 	switch (tx_status) {
+ 	case HTT_TX_FW2WBM_TX_STATUS_DROP:
