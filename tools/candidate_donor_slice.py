@@ -17,8 +17,8 @@ TARGET = '6a196f79f77acd55cf302e1696c038e4cad99254'
 INTRO = '307d23721d20e21b8160b9ba9c3cb50911ff8c00'
 INTRO_PARENT = '7fb7abf097a18c6e2ad2fb9d18876b095898e87f'
 PREFIX = 'vendor/qcom/opensource/wlan/'
-EXPECTED_PATH_COUNT = 60
-EXPECTED_PATHS_SHA256 = 'd6839cb032c99d1192d87be33c00fc607df5d786b09e5b6c4a2aa276722b0959'
+EXPECTED_PATH_COUNT = 44
+EXPECTED_PATHS_SHA256 = 'c8423910558b44d6ccaeb23587e18a296720be7e7a21befe50e220928aafd634'
 
 def cmd(*args: str, cwd: Path | None = None, check=True) -> bytes:
     cp = subprocess.run(args, cwd=cwd, stdout=subprocess.PIPE,
@@ -76,8 +76,8 @@ def reproduce(target: Path, output: Path, seed: Path,
     (output/wonder).parent.mkdir(parents=True,exist_ok=True)
     shutil.copy2(target/wonder,output/wonder)
     series=[n for n in (seed/'patches/series').read_text().splitlines() if n and not n.startswith('#')]
-    if len(series) != 9:
-        raise ValueError('Expected nine pinned review patches')
+    if len(series) != 10:
+        raise ValueError('Expected ten pinned review patches')
     reserved=set()
     for name in series:
         patch=(seed/'patches'/name).read_bytes()
