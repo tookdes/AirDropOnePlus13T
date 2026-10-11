@@ -41,7 +41,8 @@ jobs:
             --donor "$RUNNER_TEMP/donor" \
             --out patches/0009-mac-sme-passthru-session-control.patch
           test "$(sha256sum patches/0009-mac-sme-passthru-session-control.patch | awk '{print $1}')" = b7e69e63f3375fb4ad02f958fd4926a441c652a6bedd547fe50095b5e3c6af25
-          git apply --check --stat patches/0009-mac-sme-passthru-session-control.patch
+          git -C "$RUNNER_TEMP/target" apply --check "$GITHUB_WORKSPACE/patches/0009-mac-sme-passthru-session-control.patch"
+          git apply --stat patches/0009-mac-sme-passthru-session-control.patch
       - name: Commit generated patch if absent or changed
         shell: bash
         run: |
