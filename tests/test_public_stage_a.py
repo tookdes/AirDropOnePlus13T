@@ -37,6 +37,17 @@ class PublicProfile(unittest.TestCase):
         self.assertIn('OP13T_DEVICE_OF_NODE_OFFSET 768U',h)
         self.assertIn('OP13T_MODULE_SIZE 1536U',h)
 
+    def test_ci_host_probe_omissions_are_normalized_only_when_missing(self):
+        with tempfile.TemporaryDirectory() as d:
+            base=Path(d)/'stock'; missing=Path(d)/'ci'; denied=Path(d)/'denied'
+            base.write_text('CONFIG_CC_CAN_LINK=y\\nCONFIG_UAPI_HEADER_TEST=y\\nCONFIG_MODVERSIONS=y\\n'.replace('\\n', '\n'))
+            missing.write_text('CONFIG_MODVERSIONS=y\\n'.replace('\\n', '\n'))
+            denied.write_text('CONFIG_CC_CAN_LINK=n\\nCONFIG_MODVERSIONS=y\\n'.replace('\\n', '\n'))
+            self.assertEqual(config_digest(base),config_digest(missing))
+            self.assertNotEqual(config_digest(base),config_digest(denied))
+            denied.write_text('CONFIG_MODVERSIONS=n\\n'.replace('\\n', '\n'))
+            self.assertNotEqual(config_digest(base),config_digest(denied))
+
     def test_canonical_config_ignores_comment_order_only(self):
         with tempfile.TemporaryDirectory() as d:
             a=Path(d)/'a';b=Path(d)/'b'
