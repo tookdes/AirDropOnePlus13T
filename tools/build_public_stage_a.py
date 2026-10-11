@@ -24,8 +24,18 @@ LAYOUT_KEYS = {'OP13T_PLATFORM_DEV_OFFSET', 'OP13T_DEVICE_DRIVER_DATA_OFFSET',
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
+# Kconfig host capability probes may be omitted on a runner whose host
+# compiler cannot link kernel tools. Comparing the regenerated Actions config
+# against the local pinned-clang config identified exactly these two omissions.
+# Normalize ONLY absence, never explicit n or any other configuration drift.
+HOST_PROBES_OMITTED_IN_CI = ('CONFIG_CC_CAN_LINK', 'CONFIG_UAPI_HEADER_TEST')
+
 def config_digest(path: Path) -> str:
-    return sha(json.dumps(config_values(path.read_bytes()), sort_keys=True,
+    values = config_values(path.read_bytes())
+    for key in HOST_PROBES_OMITTED_IN_CI:
+        if key not in values:
+            values[key] = 'y'
+    return sha(json.dumps(values, sort_keys=True,
                           separators=(',', ':')).encode())
 
 def profile_load(profile_path: Path, exports_path: Path) -> tuple[dict, dict[str, int]]:
