@@ -90,7 +90,14 @@ def extend() -> dict:
         raise ValueError('Target-specific PLD/PE bridge patch changed without review')
     if len([ln for ln in bridge_data.splitlines() if ln.startswith(b'diff --git a/')]) != 7:
         raise ValueError('PLD/PE bridge must change exactly seven approved paths')
-    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n')
+    dp_name = '0007-dp-tx-policy-6.6-passthru.patch'
+    dp_data = (ROOT/'patches'/dp_name).read_bytes()
+    dp_digest = '8288f8551027fcd13bd3499dfc299d4a519336d88a566aee88bbdf2ccd38064e'
+    if hashlib.sha256(dp_data).hexdigest() != dp_digest:
+        raise ValueError('Target 6.6 DP adaptation changed without review')
+    if len([ln for ln in dp_data.splitlines() if ln.startswith(b'diff --git a/')]) != 6:
+        raise ValueError('Target 6.6 DP adaptation must change exactly six paths')
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n'+dp_name+'\n')
     result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
