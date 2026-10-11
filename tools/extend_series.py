@@ -80,7 +80,17 @@ def extend() -> dict:
     series = ROOT/'patches/series'
     from validate_mode_patch import validate, PATCH as MODE_PATCH
     checked = validate()
-    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n')
+    # Checked-in hand-adapted 6.6 PLD/PE bridge is reproducible, not generated
+    # from the 6.12 donor wholesale; verify its exact bytes and file scope.
+    import hashlib
+    bridge_name = '0006-pld-pe-passthru-bridge.patch'
+    bridge_data = (ROOT/'patches'/bridge_name).read_bytes()
+    bridge_digest = '7f200a312c52c199e88ab19000f1c383ffdbad5c7ea87657ca23c80e9a6115a6'
+    if hashlib.sha256(bridge_data).hexdigest() != bridge_digest:
+        raise ValueError('Target-specific PLD/PE bridge patch changed without review')
+    if len([ln for ln in bridge_data.splitlines() if ln.startswith(b'diff --git a/')]) != 7:
+        raise ValueError('PLD/PE bridge must change exactly seven approved paths')
+    series.write_text(series.read_text()+NAME+'\n'+MODE_PATCH+'\n'+bridge_name+'\n')
     result = {'dormant_mode_patch': checked, 'patch':NAME, 'preimage_git_blob': BLOB, 'postimage_git_blob':blob_hash(modified),
               'numstat':stats, 'apply_and_reverse':'PASS',
               'scope':'Exact touched-file fixture; not complete source tree or target build'}
