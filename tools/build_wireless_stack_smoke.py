@@ -11,6 +11,7 @@ live loadability, or an AirDrop installer.
 from __future__ import annotations
 import argparse, json, re, shutil, subprocess
 from pathlib import Path
+from elf_audit import Module
 
 TARGET_RELEASE='6.6.89-android15-8-g5a0ffb447c1d-ab13771415-4k'
 WONDER_REL=Path('vendor/oplus/kernel/wifi/wonder')
@@ -99,6 +100,33 @@ def build_in_tree(label:str, rel:str, ko_name:str, kernel:Path, kout:Path,
             'relocatable_object':obj.exists(),'undefined_count':len(und),
             'undefined':und,'release_ready':False,'loadable_proven':False}
 
+def parse_symvers(path:Path)->dict[str,int]:
+    rows={}
+    for line in path.read_text().splitlines():
+        f=line.split('\t')
+        if len(f)<2: continue
+        rows[f[1]]=int(f[0],16)
+    return rows
+
+def crc_compare(wonder_ko:Path, stock_symvers:list[Path])->dict:
+    if not wonder_ko.is_file():
+        return {'compared':False,'matched':[],'mismatched':[],'missing_import':[]}
+    imp=Module(wonder_ko.read_bytes()).versions()
+    stock={}
+    for p in stock_symvers:
+        stock.update(parse_symvers(p))
+    matched=[]; mismatched=[]; missing=[]
+    for name,crc in sorted(imp.items()):
+        if name=='module_layout':
+            continue
+        if name not in stock:
+            missing.append(name); continue
+        if stock[name]==crc: matched.append(name)
+        else: mismatched.append({'name':name,'wonder':f'0x{crc:08x}','stock':f'0x{stock[name]:08x}'})
+    return {'compared':True,'matched':matched,'mismatched':mismatched,
+            'missing_import':missing,
+            'alloc_hw_nm': next((x for x in mismatched if x['name']=='ieee80211_alloc_hw_nm'), None)}
+
 def build_wonder(kernel:Path, kout:Path, compiler:Path, src:Path,
                  extra_symvers:list[Path], out:Path)->dict:
     if not (src/'mac80211.c').is_file() or not (src/'Kconfig').is_file():
@@ -143,6 +171,7 @@ def main()->int:
     ap.add_argument('--compiler',type=Path,required=True)
     ap.add_argument('--target',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
+    ap.add_argument('--stock-symvers',type=Path,action='append',default=[])
     a=ap.parse_args(); a.out.mkdir(parents=True, exist_ok=False)
     log=a.out/'prepare.log'
     log.write_text('')
@@ -154,10 +183,15 @@ def main()->int:
         modules[label]=build_in_tree(label,rel,ko,a.kernel.resolve(),
                                      wireless_out,a.compiler.resolve(),
                                      a.out/label)
-    extra=[wireless_out/'net'/'wireless'/'Module.symvers',
-           wireless_out/'net'/'mac80211'/'Module.symvers']
+    extra=[]
+    stock=[p.resolve() for p in a.stock_symvers]
+    extra.extend(stock)
+    if not stock:
+        extra.extend([wireless_out/'net'/'wireless'/'Module.symvers',
+                      wireless_out/'net'/'mac80211'/'Module.symvers'])
     wonder=build_wonder(a.kernel.resolve(), wireless_out, a.compiler.resolve(),
                         a.target.resolve()/WONDER_REL, extra, a.out/'wonder')
+    crc=crc_compare(a.out/'wonder'/'src'/'wonder.ko', stock) if stock else {'compared':False}
     report={
         'schema':1,'target_release':TARGET_RELEASE,'config':cfg,
         'modules':modules,'wonder':wonder,
@@ -166,9 +200,10 @@ def main()->int:
             wonder['make_rc']==0 and (wonder['ko_emitted'] or wonder['relocatable_object']) and
             wonder['kcfi_enabled'] and wonder['kconfig_depends_on_mac80211'],
         'module_completion_gate':'BLOCKED',
-        'stock_cfg80211_crc_compared':False,
+        'stock_crc':crc,
+        'stock_cfg80211_crc_compared':bool(stock),
         'airdrop_available':False,'loadable_proven':False,
-        'note':'Compile-only. Stock has cfg80211.ko and no mac80211.ko; Wonder depends on MAC80211. CRC match and live insmod are later hard gates.'
+        'note':'Compile-only. Stock wireless export CRCs may be applied via KBUILD_EXTRA_SYMBOLS. ieee80211_ops layout may still differ; live insmod is a later hard gate.'
     }
     (a.out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     summary={k:report[k] for k in ('compile_gate_passed','module_completion_gate',

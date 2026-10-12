@@ -21,3 +21,4 @@ upstream/op15/
 shim/include/target_layout.generated.*
 .ci-logs/
 .inspect-target/
+.device-pull/

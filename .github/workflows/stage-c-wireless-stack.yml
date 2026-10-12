@@ -63,6 +63,8 @@ jobs:
             --kernel-out "$RUNNER_TEMP/stage-a/kernel-out" \
             --compiler "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
             --target "$RUNNER_TEMP/op13t-inputs/target" \
+            --stock-symvers profiles/stock-cfg80211.exports.symvers \
+            --stock-symvers profiles/stock-mac80211.exports.symvers \
             --out "$RUNNER_TEMP/wireless-smoke"
           python3 - <<'PY'
           import json, os
@@ -71,8 +73,10 @@ jobs:
           assert r['loadable_proven'] is False
           assert r['airdrop_available'] is False
           assert r['module_completion_gate']=='BLOCKED'
-          assert r['stock_cfg80211_crc_compared'] is False
-          print('cfg80211/mac80211/wonder compiled; not a device package')
+          assert r['stock_cfg80211_crc_compared'] is True
+          mis=r.get('stock_crc',{}).get('mismatched',[])
+          print('stock CRC mismatches', mis)
+          print('cfg80211/mac80211/wonder compiled against stock export CRCs; not a device package')
           PY
       - name: Preserve reports and compile logs even on failure
         if: always()
