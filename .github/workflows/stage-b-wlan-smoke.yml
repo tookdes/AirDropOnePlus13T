@@ -80,7 +80,7 @@ jobs:
             --baseline "$RUNNER_TEMP/op13t-inputs/target" \
             --candidate "$RUNNER_TEMP/candidate" \
             --out "$RUNNER_TEMP/wlan-smoke"
-      - name: Preserve reports and compile logs even on failure
+      - name: Preserve reports, compile logs and diagnostic .ko even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -90,5 +90,7 @@ jobs:
             ${{ runner.temp }}/wlan-smoke/baseline/build.log
             ${{ runner.temp }}/wlan-smoke/candidate/build.log
             ${{ runner.temp }}/candidate/backport-candidate.json
+            ${{ runner.temp }}/wlan-smoke/baseline/src/qca_cld3_peach_v2.ko
+            ${{ runner.temp }}/wlan-smoke/candidate/src/qca_cld3_peach_v2.ko
           retention-days: 14
           if-no-files-found: warn

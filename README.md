@@ -22,7 +22,7 @@ Stock GNG.1.0 firmware is not approved for passthru bring-up. The final runtime-
 
 These are compile/ABI diagnostics, not an installer:
 
-- Stage A ARM64 probes (`hello_13t.ko`, diagnostic shim) rebuild against the captured ABI profile and pass offline CRC/vermagic/layout gates. Live `insmod` is not run.
+- Stage A ARM64 probes (`hello_13t.ko`, diagnostic shim) rebuild against the captured ABI profile and pass offline CRC/vermagic/layout gates. Live `insmod` is not run. After a green Stage A run, GitHub Actions uploads `op13t-stage-a-ksu-probe.zip`: a KernelSU **probe** module that copies those two `.ko` files and does **not** autoload them. After reboot, load with `insmod hello_13t.ko` then `insmod wonder_shim_13t.ko diagnostics_only=1`. This is not AirDrop and does not replace Wi-Fi.
 - Ten reviewed WonderTap patches apply to the pinned 13T vendor tree.
 - qcacld baseline and passthru candidate compile as ARM64 objects. The candidate selects `wlan_hdd_wondertap.o` with `DRIVER_PASSTHRU_MODE` and KCFI. Hundreds of imports remain unresolved (`cfg80211_*`, `cnss_*`, `ipa_*`, plus Wonder-only `cnss_set_vendor_wonder_priv_data`). `module_completion_gate` stays BLOCKED.
 - Stock boot config has `CONFIG_CFG80211` not set and no `mac80211.ko`. Wonder.ko Kconfig `depends on MAC80211`. A compile-only cfg80211/mac80211/wonder smoke is the next public gate; it does not compare CRCs with the captured `cfg80211.ko`.

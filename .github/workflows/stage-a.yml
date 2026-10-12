@@ -2,7 +2,7 @@ name: Build ARM64 Stage A with captured ABI profile
 on:
   push:
     branches: [main]
-    paths: ['shim/**', 'tools/build_public_stage_a.py', 'tools/prepare_stage_a.py', 'tools/build_stage_a.py', 'tools/elf_audit.py', 'profiles/stage-a*', '.github/workflows/stage-a.yml']
+    paths: ['shim/**', 'ksu-test/**', 'tools/build_public_stage_a.py', 'tools/prepare_stage_a.py', 'tools/build_stage_a.py', 'tools/elf_audit.py', 'tools/package_stage_a_ksu.py', 'profiles/stage-a*', '.github/workflows/stage-a.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -50,6 +50,14 @@ jobs:
             --kernel-source "$RUNNER_TEMP/op13t-inputs/common" \
             --clang-dir "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
             --out "$RUNNER_TEMP/op13t-stage-a"
+      - name: Assemble KernelSU probe zip from verified ARM64 modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/package_stage_a_ksu.py \
+            --verified "$RUNNER_TEMP/op13t-stage-a/verified" \
+            --result "$RUNNER_TEMP/op13t-stage-a/stage-a-result.json" \
+            --out "$RUNNER_TEMP/op13t-stage-a/op13t-stage-a-ksu-probe.zip"
       - name: Publish only offline-verified probes; NOT an AirDrop release
         uses: actions/upload-artifact@v4
         with:
@@ -57,6 +65,8 @@ jobs:
           path: |
             ${{ runner.temp }}/op13t-stage-a/verified/
             ${{ runner.temp }}/op13t-stage-a/stage-a-result.json
+            ${{ runner.temp }}/op13t-stage-a/op13t-stage-a-ksu-probe.zip
+            ${{ runner.temp }}/op13t-stage-a/op13t-stage-a-ksu-probe.zip.json
           retention-days: 14
           if-no-files-found: error
       - name: Preserve public-source GKI config for diagnosing CI drift

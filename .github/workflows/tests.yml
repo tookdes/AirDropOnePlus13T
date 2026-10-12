@@ -2,9 +2,9 @@ name: Source regression tests
 on:
   push:
     branches: [main]
-    paths: ['tools/**', 'tests/**', 'shim/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
+    paths: ['tools/**', 'tests/**', 'shim/**', 'ksu-test/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
   pull_request:
-    paths: ['tools/**', 'tests/**', 'shim/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
+    paths: ['tools/**', 'tests/**', 'shim/**', 'ksu-test/**', 'patches/**', 'profiles/**', '.github/workflows/tests.yml']
   workflow_dispatch:
 permissions:
   contents: read

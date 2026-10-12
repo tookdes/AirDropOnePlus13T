@@ -1,0 +1,6 @@
+id=op13t_wonder_stage_a_probe
+name=OP13T Wonder Stage A ABI probe
+version=v0.1.0-probe
+versionCode=1
+author=tookdes
+description=ABI/insmod probe only. Not AirDrop. Default diagnostics_only=1. Do not replace Wi-Fi.

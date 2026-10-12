@@ -85,5 +85,6 @@ jobs:
             ${{ runner.temp }}/wireless-smoke/cfg80211/build.log
             ${{ runner.temp }}/wireless-smoke/mac80211/build.log
             ${{ runner.temp }}/wireless-smoke/wonder/build.log
+            ${{ runner.temp }}/wireless-smoke/wonder/src/wonder.ko
           retention-days: 14
           if-no-files-found: warn
