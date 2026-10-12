@@ -5,6 +5,8 @@ on:
     paths:
       - 'tools/build_wireless_stack_smoke.py'
       - 'tools/build_public_stage_a.py'
+      - 'patches/wonder/**'
+      - 'profiles/stock-*.exports.symvers'
       - '.github/workflows/stage-c-wireless-stack.yml'
   workflow_dispatch:
 permissions:

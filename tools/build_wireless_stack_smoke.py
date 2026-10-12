@@ -138,6 +138,15 @@ def build_wonder(kernel:Path, kout:Path, compiler:Path, src:Path,
     log=out/'build.log'
     work=out/'src'
     shutil.copytree(src, work, symlinks=True)
+    series=Path(__file__).resolve().parents[1]/'patches'/'wonder'
+    if series.is_dir():
+        for patch in sorted(series.glob('*.patch')):
+            cp=subprocess.run(['git','apply','--check','-'],cwd=work,input=patch.read_bytes(),capture_output=True)
+            if cp.returncode:
+                raise ValueError('Wonder patch failed: '+patch.name+' '+cp.stderr.decode(errors='replace'))
+            cp=subprocess.run(['git','apply','-'],cwd=work,input=patch.read_bytes(),capture_output=True)
+            if cp.returncode:
+                raise ValueError('Wonder patch apply failed: '+patch.name)
     # The pinned Makefile.include appends a canoe product Module.symvers that
     # is not part of this public smoke. Keep only the wireless-stack symbols.
     include=work/'Makefile.include'

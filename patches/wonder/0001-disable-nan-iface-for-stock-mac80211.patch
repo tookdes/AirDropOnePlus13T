@@ -1,0 +1,20 @@
+diff --git a/mac80211.c b/mac80211.c
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1086,14 +1086,13 @@
+ 	hw->extra_tx_headroom = 0; /* The frame is fully formed by mac80211 */
+ 
+ 	/* Tell mac80211 which interface types we support by setting the bits in the wiphy structure. */
++	/* Stock 13T mac80211 WARN_ONs NAN iface without ops->start_nan at its ops offset. */
+ 	hw->wiphy->interface_modes |=
+ 		BIT(NL80211_IFTYPE_ADHOC) |
+ 		BIT(NL80211_IFTYPE_MONITOR) |
+-		BIT(NL80211_IFTYPE_NAN) |           /* Added NAN mode support */
+ 		BIT(NL80211_IFTYPE_STATION);        /* Added STATION mode support */
+ 
+-	/* Set the band that supports NAN, mandatory if NL80211_IFTYPE_NAN is supported */
+-	hw->wiphy->nan_supported_bands |= BIT(NL80211_BAND_2GHZ);
++	/* Do not advertise NAN until ieee80211_ops layout matches stock mac80211. */
+ 	/* Support BW80 for IBSS Mode */
+ 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_VHT_IBSS);
+ 	/* Initial wonder feature includes ieee80211_register_hw */
