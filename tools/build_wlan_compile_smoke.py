@@ -92,8 +92,15 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
         if p.exists() or p.is_symlink(): p.unlink()
         p.symlink_to(target)
 
+    # The GKI config promotes warnings to errors (CONFIG_WERROR), and qcacld
+    # adds -Wmissing-prototypes itself. The stock source is known to carry a
+    # few non-static helper definitions without prototypes (e.g. an OPlus
+    # qdf_nbuf_clear_dhcp_bc_flags); upstream works around these with ad-hoc
+    # forward declarations, not by treating them as build failures. Demote only
+    # this diagnostic so the compile-only smoke keeps every other -Werror.
     kcflags=' '.join('-D'+x for x in OPLUS_DEFINES)+' -I'+str(plus_inc)
     kcflags+=' '+' '.join('-D'+x for x in VENDOR_KERNEL_CONFIG_DEFINES)
+    kcflags+=' -Wno-error=missing-prototypes'
     override=''
     if passthru:
         override='CONFIG_DRIVER_PASSTHRU_MODE=y CONFIG_WONDER_SUPPORT=y'
