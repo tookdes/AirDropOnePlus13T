@@ -39,14 +39,14 @@ OPLUS_SYSTEM_HEADERS = ('boot_mode.h', 'oplus_midplat.h', 'oplus_project.h',
                         'oplus_project_data_ocdt.h')
 
 # The public GKI common-tree config (gki_defconfig) omits vendor kernel configs
-# that the stock 13T vendor modules are built with. The qcacld/dataipa headers
-# switch on IS_ENABLED(CONFIG_IPA3) between the real IPA3 API and a stub branch
-# that carries a syntax error and missing prototypes; the stock device builds
-# IPA3 as an out-of-tree vendor module, so the real branch must be selected for
-# this compile-only smoke. These -D flags only steer header selection in the
-# copied public sources; they never alter the checked-in ABI profile, the stock
-# kernel config, or the emitted (non-loadable) diagnostic objects.
-VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1']
+# that the stock 13T vendor modules are built with, while the stock boot image
+# (captured config) is GKI-only and also omits them: CONFIG_ARM_SMMU is "not set"
+# and IPA3/IOMMU-util live in the vendor module tree. The qcacld/dataipa sources
+# switch on these via IS_ENABLED(CONFIG_*); selecting the vendor build's branch
+# is required for a compile-only reproduction. These -D flags only steer header
+# selection in the copied public sources; they never alter the checked-in ABI
+# profile, the stock kernel config, or the emitted (non-loadable) objects.
+VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1', 'CONFIG_ARM_SMMU=1']
 
 def oplus_system_shim(baseline: Path, out: Path) -> Path:
     """Expose the pinned 13T OPlus system headers under the kernel's
