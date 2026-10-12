@@ -27,5 +27,7 @@ class WirelessStackSmoke(unittest.TestCase):
         self.assertIn('depends on MAC80211',src)
         self.assertIn('CONFIG_CFG80211',src)
         self.assertIn('wonder.ko',src)
+        self.assertIn('TRACE_INCLUDE_PATH',src)
+        self.assertNotIn("wireless_out/'Module.symvers'",src)
 
 if __name__=='__main__': unittest.main()

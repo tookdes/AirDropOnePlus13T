@@ -80,10 +80,19 @@ def build_in_tree(label:str, rel:str, ko_name:str, kernel:Path, kout:Path,
                   compiler:Path, out:Path)->dict:
     out.mkdir(parents=True, exist_ok=False)
     log=out/'build.log'
-    cmd=make_cmd(kernel,kout,compiler)+['M='+rel,'KBUILD_MODPOST_WARN=1','modules']
+    # Out-of-tree O= builds resolve TRACE_INCLUDE_PATH to ./trace.h. Copy the
+    # in-tree wireless sources beside kernel-out so that include works.
+    src=kernel/rel
+    work=kout/rel
+    if not src.is_dir():
+        raise ValueError('Missing in-tree wireless sources: '+str(src))
+    if work.exists():
+        shutil.rmtree(work)
+    shutil.copytree(src, work, symlinks=True)
+    cmd=make_cmd(kernel,kout,compiler)+['M='+str(work),'KBUILD_MODPOST_WARN=1','modules']
     rc=run(cmd,log)
-    ko=kout/rel/ko_name
-    obj=kout/rel/(ko_name[:-3]+'.o')
+    ko=work/ko_name
+    obj=work/(ko_name[:-3]+'.o')
     nm=compiler/'llvm-nm'
     und=sorted(undefined(nm, obj if obj.exists() else ko))
     return {'label':label,'make_rc':rc,'ko_emitted':ko.exists(),
@@ -146,8 +155,7 @@ def main()->int:
                                      wireless_out,a.compiler.resolve(),
                                      a.out/label)
     extra=[wireless_out/'net'/'wireless'/'Module.symvers',
-           wireless_out/'net'/'mac80211'/'Module.symvers',
-           wireless_out/'Module.symvers']
+           wireless_out/'net'/'mac80211'/'Module.symvers']
     wonder=build_wonder(a.kernel.resolve(), wireless_out, a.compiler.resolve(),
                         a.target.resolve()/WONDER_REL, extra, a.out/'wonder')
     report={
