@@ -35,8 +35,32 @@ def undefined(nm:Path,obj:Path)->set[str]:
         if m: got.add(m.group(1))
     return got
 
+OPLUS_SYSTEM_HEADERS = ('boot_mode.h', 'oplus_midplat.h', 'oplus_project.h',
+                        'oplus_project_data_ocdt.h')
+
+def oplus_system_shim(baseline: Path, out: Path) -> Path:
+    """Expose the pinned 13T OPlus system headers under the kernel's
+    ``soc/oplus/system`` include path.
+
+    The public OnePlusOSS common tree no longer ships ``include/soc/oplus``; the
+    exact headers live in the pinned vendor module tree. Only the four headers
+    the qcacld/cmn/cnss2 source actually includes are staged, read from the
+    immutable target checkout so the smoke cannot drift from the stock ABI.
+    """
+    src = baseline/'vendor/oplus/kernel/boot/include'
+    if not src.is_dir():
+        raise ValueError('Missing OPlus system headers: '+str(src))
+    dst = out/'oplus-system-headers'/'soc'/'oplus'/'system'
+    dst.mkdir(parents=True, exist_ok=True)
+    missing = [h for h in OPLUS_SYSTEM_HEADERS if not (src/h).is_file()]
+    if missing:
+        raise ValueError('Incomplete OPlus system headers: '+', '.join(missing))
+    for h in OPLUS_SYSTEM_HEADERS:
+        shutil.copy2(src/h, dst/h)
+    return out/'oplus-system-headers'
+
 def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
-          out:Path, passthru:bool)->dict:
+          out:Path, passthru:bool, plus_inc:Path)->dict:
     cld=root/'vendor/qcom/opensource/wlan/qcacld-3.0'
     if not cld.is_dir(): raise ValueError(f'{label}: missing qcacld source')
     out.mkdir(parents=True,exist_ok=False)
@@ -58,7 +82,7 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
         if p.exists() or p.is_symlink(): p.unlink()
         p.symlink_to(target)
 
-    kcflags=' '.join('-D'+x for x in OPLUS_DEFINES)
+    kcflags=' '.join('-D'+x for x in OPLUS_DEFINES)+' -I'+str(plus_inc)
     override=''
     if passthru:
         override='CONFIG_DRIVER_PASSTHRU_MODE=y CONFIG_WONDER_SUPPORT=y'
@@ -98,8 +122,9 @@ def main()->int:
     ap.add_argument('--candidate',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     a=ap.parse_args(); a.out.mkdir(parents=True,exist_ok=False)
-    b=build('baseline',a.kernel,a.kernel_out,a.compiler,a.baseline,a.out/'baseline',False)
-    c=build('candidate',a.kernel,a.kernel_out,a.compiler,a.candidate,a.out/'candidate',True)
+    plus_inc=oplus_system_shim(a.baseline,a.out)
+    b=build('baseline',a.kernel,a.kernel_out,a.compiler,a.baseline,a.out/'baseline',False,plus_inc)
+    c=build('candidate',a.kernel,a.kernel_out,a.compiler,a.candidate,a.out/'candidate',True,plus_inc)
     report={'baseline':b,'candidate':c,
       'candidate_only_undefined':sorted(set(c['undefined'])-set(b['undefined'])),
       'baseline_only_undefined':sorted(set(b['undefined'])-set(c['undefined'])),
