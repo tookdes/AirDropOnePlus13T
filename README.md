@@ -18,8 +18,17 @@ Original boot images, proprietary firmware, factory calibration data, device log
 
 Stock GNG.1.0 firmware is not approved for passthru bring-up. The final runtime-only KernelSU package remains gated on target ABI validation, a compatible firmware set, driver/framework integration, and explicit on-device bring-up and rollback tests.
 
+## Current public CI status
+
+These are compile/ABI diagnostics, not an installer:
+
+- Stage A ARM64 probes (`hello_13t.ko`, diagnostic shim) rebuild against the captured ABI profile and pass offline CRC/vermagic/layout gates. Live `insmod` is not run.
+- Ten reviewed WonderTap patches apply to the pinned 13T vendor tree.
+- qcacld baseline and passthru candidate compile as ARM64 objects. The candidate selects `wlan_hdd_wondertap.o` with `DRIVER_PASSTHRU_MODE` and KCFI. Hundreds of imports remain unresolved (`cfg80211_*`, `cnss_*`, `ipa_*`, plus Wonder-only `cnss_set_vendor_wonder_priv_data`). `module_completion_gate` stays BLOCKED.
+- Stock boot config has `CONFIG_CFG80211` not set and no `mac80211.ko`. Wonder.ko Kconfig `depends on MAC80211`. A compile-only cfg80211/mac80211/wonder smoke is the next public gate; it does not compare CRCs with the captured `cfg80211.ko`.
+
 ## Build infrastructure
 
 The source-bundle workflow retrieves pinned public sources and the compiler into GitHub Actions artifacts. This also allows offline compilation against the private captured stock evidence without uploading that evidence. Individual bundles have SHA256 manifests and recorded git revisions.
 
-Existing reviewed patches, regression tests, the provider shim, and Stage A build tools are being imported into this repository.
+Existing reviewed patches, regression tests, the provider shim, and Stage A build tools are in this repository.

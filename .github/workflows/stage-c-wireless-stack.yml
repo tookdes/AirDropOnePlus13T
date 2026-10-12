@@ -1,0 +1,89 @@
+name: Compile cfg80211, mac80211 and Wonder (ARM64, diagnostic)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build_wireless_stack_smoke.py'
+      - 'tools/build_public_stage_a.py'
+      - '.github/workflows/stage-c-wireless-stack.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: op13t-wireless-stack-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kernel build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev pahole gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+      - name: Fetch exact public 13T common kernel, vendor tree and r510928
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/op13t-inputs"
+          mkdir -p "$root"
+          git -C "$root" init -q common
+          git -C "$root/common" remote add origin https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8750.git
+          git -C "$root/common" fetch --depth=1 origin 5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143
+          git -C "$root/common" checkout --detach FETCH_HEAD
+
+          git -C "$root" init -q target
+          git -C "$root/target" remote add origin https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750.git
+          git -C "$root/target" fetch --depth=1 origin 6a196f79f77acd55cf302e1696c038e4cad99254
+          git -C "$root/target" checkout --detach FETCH_HEAD
+
+          git -C "$root" init -q toolchain
+          git -C "$root/toolchain" remote add origin https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
+          git -C "$root/toolchain" sparse-checkout init --cone
+          git -C "$root/toolchain" sparse-checkout set clang-r510928
+          git -C "$root/toolchain" -c http.version=HTTP/1.1 fetch --filter=blob:none --depth=1 origin 18bfb7fbd697a1ad710fd0581a4ac9f3db385f71
+          git -C "$root/toolchain" checkout --detach FETCH_HEAD
+      - name: Prepare exact stock-compatible GKI module environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build_public_stage_a.py \
+            --kernel-source "$RUNNER_TEMP/op13t-inputs/common" \
+            --clang-dir "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
+            --out "$RUNNER_TEMP/stage-a"
+      - name: Compile cfg80211, mac80211 and Wonder; refuse a loadable claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build_wireless_stack_smoke.py \
+            --kernel "$RUNNER_TEMP/op13t-inputs/common" \
+            --kernel-out "$RUNNER_TEMP/stage-a/kernel-out" \
+            --compiler "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
+            --target "$RUNNER_TEMP/op13t-inputs/target" \
+            --out "$RUNNER_TEMP/wireless-smoke"
+          python3 - <<'PY'
+          import json, os
+          r=json.load(open(os.environ['RUNNER_TEMP']+'/wireless-smoke/report.json'))
+          assert r['compile_gate_passed'] is True
+          assert r['loadable_proven'] is False
+          assert r['airdrop_available'] is False
+          assert r['module_completion_gate']=='BLOCKED'
+          assert r['stock_cfg80211_crc_compared'] is False
+          print('cfg80211/mac80211/wonder compiled; not a device package')
+          PY
+      - name: Preserve reports and compile logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-wireless-stack-smoke
+          path: |
+            ${{ runner.temp }}/wireless-smoke/report.json
+            ${{ runner.temp }}/wireless-smoke/prepare.log
+            ${{ runner.temp }}/wireless-smoke/cfg80211/build.log
+            ${{ runner.temp }}/wireless-smoke/mac80211/build.log
+            ${{ runner.temp }}/wireless-smoke/wonder/build.log
+          retention-days: 14
+          if-no-files-found: warn
