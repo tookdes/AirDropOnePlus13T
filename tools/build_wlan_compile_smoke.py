@@ -38,6 +38,16 @@ def undefined(nm:Path,obj:Path)->set[str]:
 OPLUS_SYSTEM_HEADERS = ('boot_mode.h', 'oplus_midplat.h', 'oplus_project.h',
                         'oplus_project_data_ocdt.h')
 
+# The public GKI common-tree config (gki_defconfig) omits vendor kernel configs
+# that the stock 13T vendor modules are built with. The qcacld/dataipa headers
+# switch on IS_ENABLED(CONFIG_IPA3) between the real IPA3 API and a stub branch
+# that carries a syntax error and missing prototypes; the stock device builds
+# IPA3 as an out-of-tree vendor module, so the real branch must be selected for
+# this compile-only smoke. These -D flags only steer header selection in the
+# copied public sources; they never alter the checked-in ABI profile, the stock
+# kernel config, or the emitted (non-loadable) diagnostic objects.
+VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1']
+
 def oplus_system_shim(baseline: Path, out: Path) -> Path:
     """Expose the pinned 13T OPlus system headers under the kernel's
     ``soc/oplus/system`` include path.
@@ -83,6 +93,7 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
         p.symlink_to(target)
 
     kcflags=' '.join('-D'+x for x in OPLUS_DEFINES)+' -I'+str(plus_inc)
+    kcflags+=' '+' '.join('-D'+x for x in VENDOR_KERNEL_CONFIG_DEFINES)
     override=''
     if passthru:
         override='CONFIG_DRIVER_PASSTHRU_MODE=y CONFIG_WONDER_SUPPORT=y'
