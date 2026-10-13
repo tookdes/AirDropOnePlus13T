@@ -7,9 +7,6 @@
  */
 #ifndef OP13T_SYNTAX_SMOKE_ONLY
 #include <linux/types.h>
-#else
-typedef unsigned int u32;
-typedef unsigned char u8;
 #endif
 
 struct wondertap_set_freq_params;

@@ -18,13 +18,16 @@ class ShimLifecycle(unittest.TestCase):
         directory=Path(cls.tmp.name)
         src=(ROOT/'shim/wonder_shim_13t.c').read_text()
         stripped=re.sub(r'^#include .*\n','',src,flags=re.M)
-        unit=((ROOT/'tests/fixtures/shim_host_prefix.h').read_text()+ '\n'+stripped+'\n'+
+        unit=((ROOT/'tests/fixtures/shim_host_prefix.h').read_text()+ '\n'+
+              (ROOT/'shim/include/wondertap_min.h').read_text()+ '\n'+stripped+'\n'+
               (ROOT/'tests/fixtures/shim_host_main.c').read_text())
         file=directory/'shim_mock.c'; file.write_text(unit)
         cls.exe=directory/'shim_mock'
         cmd=['cc','-std=gnu11','-Wall','-Wextra','-Werror','-Wno-unused-parameter',
              '-fsanitize=undefined','-fno-sanitize-recover=all',str(file),'-o',str(cls.exe)]
-        subprocess.run(cmd,check=True,capture_output=True,text=True)
+        compiled=subprocess.run(cmd,capture_output=True,text=True)
+        if compiled.returncode:
+            raise AssertionError(compiled.stdout+compiled.stderr)
         cls.results=[]
         cls.sha=hashlib.sha256(src.encode()).hexdigest()
     @classmethod
