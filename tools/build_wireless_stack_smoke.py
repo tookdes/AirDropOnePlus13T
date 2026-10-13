@@ -69,10 +69,20 @@ def enable_wireless_config(kernel:Path, kout_src:Path, kout_dst:Path,
         if rc: raise RuntimeError('scripts/config failed for '+name)
     rc=run(make_cmd(kernel,kout_dst,compiler)+['olddefconfig'], log)
     if rc: raise RuntimeError('olddefconfig failed after enabling wireless')
+    # Stock 13T mac80211.ko was built without MAC80211_DEBUGFS; those three
+    # ops pointers (link/sta/link_sta add_debugfs) shift wake_tx_queue from
+    # 0x2f0 (stock) to 0x308 (GKI). Wonder must match the running module.
+    rc=run([str(script),'--file',str(cfg),'--disable','MAC80211_DEBUGFS'], log)
+    if rc: raise RuntimeError('scripts/config failed for MAC80211_DEBUGFS')
+    rc=run(make_cmd(kernel,kout_dst,compiler)+['olddefconfig'], log)
+    if rc: raise RuntimeError('olddefconfig failed after disabling MAC80211_DEBUGFS')
     text=cfg.read_text(errors='replace')
     enabled={n:config_is_enabled(text,n) for n in ('CFG80211','MAC80211','RFKILL')}
+    enabled['MAC80211_DEBUGFS']=config_is_enabled(text,'MAC80211_DEBUGFS')
     if not enabled['CFG80211'] or not enabled['MAC80211']:
         raise ValueError('Wireless configs did not remain enabled: '+json.dumps(enabled))
+    if enabled['MAC80211_DEBUGFS']:
+        raise ValueError('MAC80211_DEBUGFS must stay disabled to match stock ops layout')
     rc=run(make_cmd(kernel,kout_dst,compiler)+['modules_prepare'], log)
     if rc: raise RuntimeError('modules_prepare failed after enabling wireless')
     return {'enabled':enabled,'kernel_out':str(kout_dst)}
