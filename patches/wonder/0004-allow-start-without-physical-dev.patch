@@ -11,7 +11,7 @@ diff --git a/mac80211.c b/mac80211.c
  	int ret;
  
  	/* This should turn on the hardware and frame reception. */
-@@ -635,6 +638,19 @@
+@@ -635,6 +638,16 @@
  	wondertap_init_params.ampdu_enable = wondertap_capabilities.bits.ampdu_aggregation;
  	wondertap_init_params.amsdu_enable = wondertap_capabilities.bits.amsdu_aggregation;
  	wondertap_init_params.rate_adaptation_enable = wondertap_capabilities.bits.rate_adaptation;
@@ -28,7 +28,7 @@ diff --git a/mac80211.c b/mac80211.c
  	ret = wondertap_init(&wonder->wondertap_data, &wondertap_init_params);
  	if (ret) {
  		wonder_error("Failed to initialize wondertap0, error: %d\n", ret);
-@@ -649,8 +665,10 @@
+@@ -649,8 +662,9 @@
  	ret = wonder_pdev_get(wonder, pdev_name);
  	if (ret) {
  		wonder_error("Failed to get physical device %s\n", pdev_name);
