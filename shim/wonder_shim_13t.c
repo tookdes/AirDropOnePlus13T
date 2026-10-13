@@ -15,7 +15,9 @@
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 #include "include/target_guard.h"
+#include "include/wondertap_min.h"
 
 /* Generated only from reviewed, captured target layout evidence. */
 #ifndef OP13T_SYNTAX_SMOKE_ONLY
@@ -30,6 +32,9 @@ static_assert(sizeof(struct module) == OP13T_MODULE_SIZE);
 static bool diagnostics_only = true;
 module_param(diagnostics_only, bool, 0444);
 MODULE_PARM_DESC(diagnostics_only, "Read-only DT diagnostics; default true, no devices/properties created");
+static bool software_ops;
+module_param(software_ops, bool, 0444);
+MODULE_PARM_DESC(software_ops, "Register a no-radio wondertap ops stub; default false");
 static char *provider_node = "/soc/pinctrl@f000000/cnss_pins/cnss_host_sol_default";
 module_param(provider_node, charp, 0444);
 static char *wonder_node = "/soc/pinctrl@f000000/cnss_pins";
@@ -59,6 +64,80 @@ static void shim_unbind(struct device *dev, struct device *master, void *data)
 static const struct component_ops provider_ops = {
 	.bind = shim_bind,
 	.unbind = shim_unbind,
+};
+
+static int software_dummy;
+
+static int software_init(void **handle, const struct wondertap_init_params *params)
+{
+	(void)params;
+	if (!handle)
+		return -EINVAL;
+	*handle = &software_dummy;
+	pr_info("op13t-wonder: software wondertap init; no radio\n");
+	return 0;
+}
+
+static void software_deinit(void *handle, const struct wondertap_deinit_params *params)
+{
+	(void)handle;
+	(void)params;
+}
+
+static int software_set_freq(void *handle, const struct wondertap_set_freq_params *params)
+{
+	(void)handle;
+	(void)params;
+	return 0;
+}
+
+static int software_set_filter(void *handle, enum wondertap_filter_type filter_type,
+			       const void *params)
+{
+	(void)handle;
+	(void)filter_type;
+	(void)params;
+	return 0;
+}
+
+static int software_set_fixed_tx_rate(void *handle,
+				      const struct wondertap_fixed_tx_rate_params *params)
+{
+	(void)handle;
+	(void)params;
+	return 0;
+}
+
+static int software_set_tx_rate_mask(void *handle,
+				     const struct wondertap_tx_rate_mask_params *params)
+{
+	(void)handle;
+	(void)params;
+	return 0;
+}
+
+static int software_get_capabilities(void *handle, struct wondertap_capability *features)
+{
+	(void)handle;
+	if (!features)
+		return -EINVAL;
+	memset(features, 0, sizeof(*features));
+	return 0;
+}
+
+static const struct wondertap_ops software_wondertap_ops = {
+	.init = software_init,
+	.deinit = software_deinit,
+	.set_freq = software_set_freq,
+	.set_filter = software_set_filter,
+	.set_fixed_tx_rate = software_set_fixed_tx_rate,
+	.set_tx_rate_mask = software_set_tx_rate_mask,
+	.get_capabilities = software_get_capabilities,
+};
+
+static struct wondertap_priv software_priv = {
+	.ver = WONDER_VERSION_1_5_1,
+	.wonder_ops = &software_wondertap_ops,
 };
 
 /* Same prototype as the donor cnss2.h, including const. No KCFI casts. */
@@ -249,6 +328,11 @@ static int __init wonder_shim_13t_init(void)
 		goto fail_devices;
 	}
 	wonder_pdev = pdev;
+	if (software_ops) {
+		ret = cnss_set_vendor_wonder_priv_data(&software_priv);
+		if (ret)
+			goto fail_devices;
+	}
 	return 0;
 fail_devices:
 	remove_shim_devices();

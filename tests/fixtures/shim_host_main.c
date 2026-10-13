@@ -64,6 +64,14 @@ int main(int argc,char **argv) {
         assert(cnss_set_vendor_wonder_priv_data((void *)2)==0);
         wonder_shim_13t_exit(); clean();
         assert(property_adds==1 && property_removes==1);
+    }else if(!strcmp(test,"software_ops")){
+        diagnostics_only=false; software_ops=true;
+        assert(wonder_shim_13t_init()==0);
+        assert(components==1 && component_add_calls==1);
+        assert(platform_get_drvdata(provider_pdev)==&software_priv);
+        /* Replacing the software stub requires an explicit unregister. */
+        assert(cnss_set_vendor_wonder_priv_data((void *)1)==-EBUSY);
+        wonder_shim_13t_exit(); software_ops=false; clean();
     }else { ret=1; return ret; }
     printf("PASS %s: sequential host mock, not kernel loadability\n",test);
     return 0;

@@ -57,5 +57,6 @@ class ShimLifecycle(unittest.TestCase):
     def test_component_failure_is_returned_and_callbacks_cleared(self): self.run_case('component_fail')
     def test_failed_module_pin_is_not_reported_success(self): self.run_case('pin_fail')
     def test_registration_idempotence_and_full_teardown(self): self.run_case('lifecycle')
+    def test_software_ops_registers_stub_without_radio(self): self.run_case('software_ops')
 
 if __name__=='__main__': unittest.main(verbosity=2)

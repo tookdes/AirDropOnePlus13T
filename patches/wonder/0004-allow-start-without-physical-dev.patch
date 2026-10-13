@@ -1,0 +1,42 @@
+diff --git a/mac80211.c b/mac80211.c
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -619,6 +619,9 @@
+ 	struct wondertap_init_params wondertap_init_params;
+ 	struct wondertap_capability wondertap_capabilities;
+ 	const char* pdev_name = physical_name;
++	static const u8 software_bssid[ETH_ALEN];
++	struct wondertap_set_freq_params software_freq;
++	struct wondertap_fixed_tx_rate_params software_rate;
+ 	int ret;
+ 
+ 	/* This should turn on the hardware and frame reception. */
+@@ -635,6 +638,19 @@
+ 	wondertap_init_params.ampdu_enable = wondertap_capabilities.bits.ampdu_aggregation;
+ 	wondertap_init_params.amsdu_enable = wondertap_capabilities.bits.amsdu_aggregation;
+ 	wondertap_init_params.rate_adaptation_enable = wondertap_capabilities.bits.rate_adaptation;
++	memset(&software_freq, 0, sizeof(software_freq));
++	memset(&software_rate, 0, sizeof(software_rate));
++	software_freq.freq = 5180;
++	software_freq.bandwidth = WONDERTAP_RATE_BW_20;
++	software_rate.preamble = WONDERTAP_RATE_PREAMBLE_LEGACY;
++	software_rate.bw = WONDERTAP_RATE_BW_20;
++	wondertap_set_freq(&wonder->wondertap_data, &software_freq);
++	wondertap_set_fixed_tx_rate(&wonder->wondertap_data, &software_rate);
++	wondertap_set_bssid_filter(&wonder->wondertap_data, software_bssid);
++	wondertap_set_reg(&wonder->wondertap_data, "00");
+ 	ret = wondertap_init(&wonder->wondertap_data, &wondertap_init_params);
+ 	if (ret) {
+ 		wonder_error("Failed to initialize wondertap0, error: %d\n", ret);
+@@ -649,8 +665,10 @@
+ 	ret = wonder_pdev_get(wonder, pdev_name);
+ 	if (ret) {
+ 		wonder_error("Failed to get physical device %s\n", pdev_name);
+-		wondertap_deinit(&wonder->wondertap_data);
+-		return ret;
++		/* Software stub does not create wondertap0; keep the soft MAC up. */
++		wonder_info("Continuing without physical device; TX/RX passthru disabled.\n");
++		return 0;
+ 	}
+ 
+ 	/* turn on frame reception */
