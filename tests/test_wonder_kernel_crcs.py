@@ -47,6 +47,7 @@ class WonderKernelCrcs(unittest.TestCase):
                                                ROOT/'profiles/stock-wonder-kernel.exports.symvers')
         with tempfile.TemporaryDirectory() as td:
             out=Path(td); kout=out/'kernel'; kout.mkdir()
+            (kout/'Module.symvers').write_text('0x4e276f37\tmodule_layout\tvmlinux\tEXPORT_SYMBOL\t\n',encoding='utf-8')
             def fake_run(args,log):
                 for i,obj in enumerate(crcs.KERNEL_OBJECTS):
                     p=Path(obj); cmd=kout/p.parent/('.'+p.name+'.cmd')
@@ -57,10 +58,22 @@ class WonderKernelCrcs(unittest.TestCase):
             self.assertTrue(report['fresh_kernel_crc_gate_passed'])
             self.assertEqual(path.read_bytes(),(ROOT/'profiles/stock-wonder-kernel.exports.symvers').read_bytes())
             self.assertFalse(report['loadable_proven'])
+            self.assertEqual(report['additional_exports_for_modpost'],53)
+            self.assertNotIn('module_layout',(out/'wonder-kernel-additional.symvers').read_text(encoding='utf-8'))
+
+    def test_duplicate_core_exports_are_omitted_not_shadowed(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)/'Module.symvers'
+            row=['0x00000001','sym','vmlinux','EXPORT_SYMBOL','']
+            p.write_text('\t'.join(row)+'\n',encoding='utf-8')
+            self.assertEqual(crcs.additional_rows([row],p),[])
+            bad=['0x00000002','sym','vmlinux','EXPORT_SYMBOL','']
+            with self.assertRaises(ValueError):crcs.additional_rows([bad],p)
 
     def test_missing_fresh_crc_never_emits_modpost_symvers(self):
         with tempfile.TemporaryDirectory() as td:
             out=Path(td); kout=out/'kernel'; kout.mkdir()
+            (kout/'Module.symvers').write_text('0x4e276f37\tmodule_layout\tvmlinux\tEXPORT_SYMBOL\t\n',encoding='utf-8')
             def fake_run(args,log):
                 for obj in crcs.KERNEL_OBJECTS:
                     p=Path(obj); cmd=kout/p.parent/('.'+p.name+'.cmd')

@@ -213,7 +213,7 @@ def main()->int:
         modules[label]=build_in_tree(label,rel,ko,a.kernel.resolve(),
                                      wireless_out,a.compiler.resolve(),
                                      a.out/label)
-    extra=[checked_kernel]
+    extra=[a.out/'wonder-kernel-additional.symvers']
     stock=[p.resolve() for p in a.stock_symvers]
     extra.extend(stock)
     if not stock:

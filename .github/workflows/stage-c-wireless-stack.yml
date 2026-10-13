@@ -100,6 +100,7 @@ jobs:
             ${{ runner.temp }}/wireless-smoke/kernel-crc.json
             ${{ runner.temp }}/wireless-smoke/kernel-crc-build.log
             ${{ runner.temp }}/wireless-smoke/wonder-kernel-checked.symvers
+            ${{ runner.temp }}/wireless-smoke/wonder-kernel-additional.symvers
             ${{ runner.temp }}/wireless-smoke/wireless.config
             ${{ runner.temp }}/wireless-smoke/prepare.log
             ${{ runner.temp }}/wireless-smoke/cfg80211/build.log

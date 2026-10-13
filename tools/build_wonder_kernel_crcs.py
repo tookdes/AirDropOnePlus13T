@@ -60,6 +60,23 @@ def compare_fresh(fresh: dict[str,int], expected: dict[str,int]) -> dict:
             'missing':missing,'mismatched':mismatched}
 
 
+def additional_rows(rows: list[list[str]], existing: Path) -> list[list[str]]:
+    known={}
+    for line in existing.read_text(encoding='utf-8').splitlines():
+        fields=line.split('\t')
+        if len(fields)!=5 or fields[1] in known:
+            raise ValueError('Invalid preexisting kernel Module.symvers')
+        known[fields[1]]=fields
+    extra=[]
+    for fields in rows:
+        previous=known.get(fields[1])
+        if previous is None:
+            extra.append(fields)
+        elif previous != fields:
+            raise ValueError('Preexisting kernel export conflicts with freshly checked metadata: '+fields[1])
+    return extra
+
+
 def prepare(kernel: Path, kout: Path, make: list[str], out: Path) -> tuple[Path, dict]:
     profile=ROOT/'profiles/stock-wonder-kernel.json'
     baseline=ROOT/'profiles/stock-wonder-kernel.exports.symvers'
@@ -83,8 +100,14 @@ def prepare(kernel: Path, kout: Path, make: list[str], out: Path) -> tuple[Path,
     if not report['fresh_kernel_crc_gate_passed']:
         raise ValueError('Fresh kernel import CRC gate failed; see kernel-crc.json')
     # Every value comes from fresh genksyms output, not an unchecked baseline.
+    extra=additional_rows(rows,kout/'Module.symvers')
     path=out/'wonder-kernel-checked.symvers'
     path.write_bytes(''.join(f'0x{fresh[f[1]]:08x}\t'+ '\t'.join(f[1:])+'\n' for f in rows).encode('ascii'))
+    # Do not feed core exports already in kernel-out/Module.symvers to modpost
+    # a second time. No existing CRC is replaced or silently shadowed.
+    (out/'wonder-kernel-additional.symvers').write_bytes(''.join('\t'.join(f)+'\n' for f in extra).encode('ascii'))
+    report['additional_exports_for_modpost']=len(extra)
+    (out/'kernel-crc.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     return path,report
 
 
