@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tools/build_wireless_stack_smoke.py'
+      - 'tools/audit_mac80211_ops.py'
       - 'tools/build_public_stage_a.py'
       - 'patches/wonder/**'
       - 'profiles/stock-*.exports.symvers'
@@ -72,12 +73,16 @@ jobs:
           import json, os
           r=json.load(open(os.environ['RUNNER_TEMP']+'/wireless-smoke/report.json'))
           assert r['compile_gate_passed'] is True
+          assert r['config']['enabled']['MAC80211_DEBUGFS'] is False
+          assert r['config']['enabled']['NL80211_TESTMODE'] is True
+          assert r['ops_layout']['ops_layout_gate_passed'] is True
           assert r['loadable_proven'] is False
           assert r['airdrop_available'] is False
           assert r['module_completion_gate']=='BLOCKED'
           assert r['stock_cfg80211_crc_compared'] is True
           mis=r.get('stock_crc',{}).get('mismatched',[])
           print('stock CRC mismatches', mis)
+          assert not mis
           print('cfg80211/mac80211/wonder compiled against stock export CRCs; not a device package')
           PY
       - name: Preserve reports and compile logs even on failure
@@ -87,6 +92,8 @@ jobs:
           name: op13t-wireless-stack-smoke
           path: |
             ${{ runner.temp }}/wireless-smoke/report.json
+            ${{ runner.temp }}/wireless-smoke/ops-layout.json
+            ${{ runner.temp }}/wireless-smoke/wireless.config
             ${{ runner.temp }}/wireless-smoke/prepare.log
             ${{ runner.temp }}/wireless-smoke/cfg80211/build.log
             ${{ runner.temp }}/wireless-smoke/mac80211/build.log

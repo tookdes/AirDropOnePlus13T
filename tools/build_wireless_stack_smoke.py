@@ -2,7 +2,7 @@
 """Compile-only cfg80211, mac80211 and Wonder against the pinned 13T GKI tree.
 
 Stock boot config has CONFIG_CFG80211 not set; the captured device ships an
-out-of-tree cfg80211.ko and no mac80211.ko. Wonder.ko Kconfig depends on
+out-of-tree cfg80211.ko and mac80211.ko. Wonder.ko Kconfig depends on
 MAC80211, so this smoke enables those two configs on a *copy* of the Stage A
 kernel-out, builds the in-tree wireless modules, then builds the pinned 13T
 Wonder sources. It does NOT claim CRC match with the captured cfg80211.ko,
@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse, json, re, shutil, subprocess
 from pathlib import Path
 from elf_audit import Module
+from audit_mac80211_ops import audit_path, compile_time_assertions
 
 TARGET_RELEASE='6.6.89-android15-8-g5a0ffb447c1d-ab13771415-4k'
 WONDER_REL=Path('vendor/oplus/kernel/wifi/wonder')
@@ -69,20 +70,25 @@ def enable_wireless_config(kernel:Path, kout_src:Path, kout_dst:Path,
         if rc: raise RuntimeError('scripts/config failed for '+name)
     rc=run(make_cmd(kernel,kout_dst,compiler)+['olddefconfig'], log)
     if rc: raise RuntimeError('olddefconfig failed after enabling wireless')
-    # Stock 13T mac80211.ko was built without MAC80211_DEBUGFS; those three
-    # ops pointers (link/sta/link_sta add_debugfs) shift wake_tx_queue from
-    # 0x2f0 (stock) to 0x308 (GKI). Wonder must match the running module.
+    # Stock ops omit the three DEBUGFS callbacks but include the two TESTMODE
+    # callbacks. DEBUGFS=n alone leaves wake_tx_queue at 0x2e0, not stock 0x2f0.
     rc=run([str(script),'--file',str(cfg),'--disable','MAC80211_DEBUGFS'], log)
     if rc: raise RuntimeError('scripts/config failed for MAC80211_DEBUGFS')
+    rc=run([str(script),'--file',str(cfg),'--enable','NL80211_TESTMODE'], log)
+    if rc: raise RuntimeError('scripts/config failed for NL80211_TESTMODE')
     rc=run(make_cmd(kernel,kout_dst,compiler)+['olddefconfig'], log)
-    if rc: raise RuntimeError('olddefconfig failed after disabling MAC80211_DEBUGFS')
+    if rc: raise RuntimeError('olddefconfig failed after setting stock wireless ops config')
     text=cfg.read_text(errors='replace')
     enabled={n:config_is_enabled(text,n) for n in ('CFG80211','MAC80211','RFKILL')}
     enabled['MAC80211_DEBUGFS']=config_is_enabled(text,'MAC80211_DEBUGFS')
+    enabled['NL80211_TESTMODE']=config_is_enabled(text,'NL80211_TESTMODE')
+    enabled['PM']=config_is_enabled(text,'PM')
     if not enabled['CFG80211'] or not enabled['MAC80211']:
         raise ValueError('Wireless configs did not remain enabled: '+json.dumps(enabled))
     if enabled['MAC80211_DEBUGFS']:
         raise ValueError('MAC80211_DEBUGFS must stay disabled to match stock ops layout')
+    if not enabled['NL80211_TESTMODE'] or not enabled['PM']:
+        raise ValueError('NL80211_TESTMODE and PM must stay enabled to match stock ops layout')
     rc=run(make_cmd(kernel,kout_dst,compiler)+['modules_prepare'], log)
     if rc: raise RuntimeError('modules_prepare failed after enabling wireless')
     return {'enabled':enabled,'kernel_out':str(kout_dst)}
@@ -157,6 +163,8 @@ def build_wonder(kernel:Path, kout:Path, compiler:Path, src:Path,
             cp=subprocess.run(['git','apply','-'],cwd=work,input=patch.read_bytes(),capture_output=True)
             if cp.returncode:
                 raise ValueError('Wonder patch apply failed: '+patch.name)
+    mac=work/'mac80211.c'
+    mac.write_text(mac.read_text(encoding='utf-8')+compile_time_assertions(), encoding='utf-8')
     # The pinned Makefile.include appends a canoe product Module.symvers that
     # is not part of this public smoke. Keep only the wireless-stack symbols.
     include=work/'Makefile.include'
@@ -210,19 +218,24 @@ def main()->int:
                       wireless_out/'net'/'mac80211'/'Module.symvers'])
     wonder=build_wonder(a.kernel.resolve(), wireless_out, a.compiler.resolve(),
                         a.target.resolve()/WONDER_REL, extra, a.out/'wonder')
-    crc=crc_compare(a.out/'wonder'/'src'/'wonder.ko', stock) if stock else {'compared':False}
+    ko=a.out/'wonder'/'src'/'wonder.ko'
+    crc=crc_compare(ko, stock) if stock else {'compared':False}
+    ops=audit_path(ko)
+    (a.out/'ops-layout.json').write_text(json.dumps(ops,indent=2)+'\n', encoding='utf-8')
+    (a.out/'wireless.config').write_bytes((wireless_out/'.config').read_bytes())
     report={
         'schema':1,'target_release':TARGET_RELEASE,'config':cfg,
         'modules':modules,'wonder':wonder,
         'compile_gate_passed': all(m['make_rc']==0 and m['ko_emitted']
                                    for m in modules.values()) and
             wonder['make_rc']==0 and (wonder['ko_emitted'] or wonder['relocatable_object']) and
-            wonder['kcfi_enabled'] and wonder['kconfig_depends_on_mac80211'],
+            wonder['kcfi_enabled'] and wonder['kconfig_depends_on_mac80211'] and
+            ops['ops_layout_gate_passed'] and (not stock or not crc['mismatched']),
         'module_completion_gate':'BLOCKED',
-        'stock_crc':crc,
+        'stock_crc':crc,'ops_layout':ops,
         'stock_cfg80211_crc_compared':bool(stock),
         'airdrop_available':False,'loadable_proven':False,
-        'note':'Compile-only. Stock wireless export CRCs may be applied via KBUILD_EXTRA_SYMBOLS. ieee80211_ops layout may still differ; live insmod is a later hard gate.'
+        'note':'Compile-only. Stock wireless export CRCs may be applied via KBUILD_EXTRA_SYMBOLS. Initialized ieee80211_ops slots are statically checked; complete ABI/KCFI and live insmod remain later hard gates.'
     }
     (a.out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     summary={k:report[k] for k in ('compile_gate_passed','module_completion_gate',
@@ -232,7 +245,8 @@ def main()->int:
                     'mac80211_ko':modules['mac80211']['ko_emitted'],
                     'wonder_ko':wonder['ko_emitted'],
                     'wonder_kcfi':wonder['kcfi_enabled'],
-                    'wonder_undefined':wonder['undefined_count']})
+                    'wonder_undefined':wonder['undefined_count'],
+                    'wonder_ops_layout':ops['ops_layout_gate_passed']})
     print(json.dumps(summary, indent=2))
     return 0 if report['compile_gate_passed'] else 1
 
