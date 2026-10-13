@@ -13,6 +13,7 @@ import argparse, json, re, shutil, subprocess
 from pathlib import Path
 from elf_audit import Module
 from audit_mac80211_ops import audit_path, compile_time_assertions
+from build_wonder_kernel_crcs import prepare as prepare_kernel_crcs, version_coverage
 
 TARGET_RELEASE='6.6.89-android15-8-g5a0ffb447c1d-ab13771415-4k'
 WONDER_REL=Path('vendor/oplus/kernel/wifi/wonder')
@@ -205,12 +206,14 @@ def main()->int:
     wireless_out=a.out/'wireless-kernel-out'
     cfg=enable_wireless_config(a.kernel.resolve(), a.kernel_out.resolve(),
                                wireless_out, a.compiler.resolve(), log)
+    checked_kernel,kernel_crc=prepare_kernel_crcs(a.kernel.resolve(),wireless_out,
+        make_cmd(a.kernel.resolve(),wireless_out,a.compiler.resolve()),a.out)
     modules={}
     for label,rel,ko in WIRELESS_MODULES:
         modules[label]=build_in_tree(label,rel,ko,a.kernel.resolve(),
                                      wireless_out,a.compiler.resolve(),
                                      a.out/label)
-    extra=[]
+    extra=[checked_kernel]
     stock=[p.resolve() for p in a.stock_symvers]
     extra.extend(stock)
     if not stock:
@@ -219,7 +222,8 @@ def main()->int:
     wonder=build_wonder(a.kernel.resolve(), wireless_out, a.compiler.resolve(),
                         a.target.resolve()/WONDER_REL, extra, a.out/'wonder')
     ko=a.out/'wonder'/'src'/'wonder.ko'
-    crc=crc_compare(ko, stock) if stock else {'compared':False}
+    crc=crc_compare(ko, stock+[checked_kernel])
+    coverage=version_coverage(Module(ko.read_bytes())) if ko.is_file() else {'all_strong_imports_versioned':False}
     ops=audit_path(ko)
     (a.out/'ops-layout.json').write_text(json.dumps(ops,indent=2)+'\n', encoding='utf-8')
     (a.out/'wireless.config').write_bytes((wireless_out/'.config').read_bytes())
@@ -230,9 +234,10 @@ def main()->int:
                                    for m in modules.values()) and
             wonder['make_rc']==0 and (wonder['ko_emitted'] or wonder['relocatable_object']) and
             wonder['kcfi_enabled'] and wonder['kconfig_depends_on_mac80211'] and
-            ops['ops_layout_gate_passed'] and (not stock or not crc['mismatched']),
+            ops['ops_layout_gate_passed'] and not crc['mismatched'] and
+            kernel_crc['fresh_kernel_crc_gate_passed'] and coverage['all_strong_imports_versioned'],
         'module_completion_gate':'BLOCKED',
-        'stock_crc':crc,'ops_layout':ops,
+        'stock_crc':crc,'ops_layout':ops,'kernel_crc':kernel_crc,'version_coverage':coverage,
         'stock_cfg80211_crc_compared':bool(stock),
         'airdrop_available':False,'loadable_proven':False,
         'note':'Compile-only. Stock wireless export CRCs may be applied via KBUILD_EXTRA_SYMBOLS. Initialized ieee80211_ops slots are statically checked; complete ABI/KCFI and live insmod remain later hard gates.'

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "kernel_commit": "5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143",
+  "stock_boot_sha256": "3672b815e7afc2f6c9807d211bdbbf53757cb8537dcbc80ba5a49ff2b5a8a66e",
+  "exports_sha256": "d3404a2e05eaf3bf15b40b7b83042a22f615c170471fc1b4bb874070373a053c",
+  "export_count": 54,
+  "scope": "Actual boot export subset for Wonder imports. Every CRC must be freshly regenerated before modpost; no module byte patching."
+}

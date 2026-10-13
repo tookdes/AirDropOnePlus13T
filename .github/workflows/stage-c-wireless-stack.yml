@@ -5,6 +5,8 @@ on:
     paths:
       - 'tools/build_wireless_stack_smoke.py'
       - 'tools/audit_mac80211_ops.py'
+      - 'tools/build_wonder_kernel_crcs.py'
+      - 'profiles/stock-wonder-kernel.json'
       - 'tools/build_public_stage_a.py'
       - 'patches/wonder/**'
       - 'profiles/stock-*.exports.symvers'
@@ -76,6 +78,8 @@ jobs:
           assert r['config']['enabled']['MAC80211_DEBUGFS'] is False
           assert r['config']['enabled']['NL80211_TESTMODE'] is True
           assert r['ops_layout']['ops_layout_gate_passed'] is True
+          assert r['kernel_crc']['fresh_kernel_crc_gate_passed'] is True
+          assert r['version_coverage']['all_strong_imports_versioned'] is True
           assert r['loadable_proven'] is False
           assert r['airdrop_available'] is False
           assert r['module_completion_gate']=='BLOCKED'
@@ -93,6 +97,9 @@ jobs:
           path: |
             ${{ runner.temp }}/wireless-smoke/report.json
             ${{ runner.temp }}/wireless-smoke/ops-layout.json
+            ${{ runner.temp }}/wireless-smoke/kernel-crc.json
+            ${{ runner.temp }}/wireless-smoke/kernel-crc-build.log
+            ${{ runner.temp }}/wireless-smoke/wonder-kernel-checked.symvers
             ${{ runner.temp }}/wireless-smoke/wireless.config
             ${{ runner.temp }}/wireless-smoke/prepare.log
             ${{ runner.temp }}/wireless-smoke/cfg80211/build.log

@@ -83,7 +83,7 @@ class WirelessConfigGate(unittest.TestCase):
 
 
 class WirelessReportGate(unittest.TestCase):
-    def run_main(self, ops_passed, crc_mismatch=False):
+    def run_main(self, ops_passed, crc_mismatch=False, fresh_passed=True, coverage_passed=True):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
             out=root/'out'
@@ -91,6 +91,11 @@ class WirelessReportGate(unittest.TestCase):
                 dest.mkdir()
                 (dest/'.config').write_text('CONFIG_NL80211_TESTMODE=y\n',encoding='utf-8')
                 return {'enabled':{'NL80211_TESTMODE':True,'MAC80211_DEBUGFS':False}}
+            def build_wonder(*args):
+                ko=out/'wonder/src/wonder.ko'
+                ko.parent.mkdir(parents=True)
+                ko.write_bytes(b'synthetic unit test only')
+                return wonder
             module={'make_rc':0,'ko_emitted':True}
             wonder=dict(module,relocatable_object=True,kcfi_enabled=True,
                         kconfig_depends_on_mac80211=True,undefined_count=0)
@@ -99,8 +104,11 @@ class WirelessReportGate(unittest.TestCase):
                   '--out',str(out),'--stock-symvers',str(root/'stock.symvers')]
             with patch.object(sys,'argv',argv), \
                  patch.object(smoke,'enable_wireless_config',side_effect=prepare), \
+                 patch.object(smoke,'prepare_kernel_crcs',return_value=(root/'checked.symvers',{'fresh_kernel_crc_gate_passed':fresh_passed})), \
+                 patch.object(smoke,'version_coverage',return_value={'all_strong_imports_versioned':coverage_passed}), \
+                 patch.object(smoke,'Module'), \
                  patch.object(smoke,'build_in_tree',return_value=module), \
-                 patch.object(smoke,'build_wonder',return_value=wonder), \
+                 patch.object(smoke,'build_wonder',side_effect=build_wonder), \
                  patch.object(smoke,'audit_path',return_value={'ops_layout_gate_passed':ops_passed}), \
                  patch.object(smoke,'crc_compare',return_value={'compared':True,'mismatched':['bad'] if crc_mismatch else []}), \
                  patch('builtins.print'):
@@ -117,6 +125,13 @@ class WirelessReportGate(unittest.TestCase):
         rc,result=self.run_main(True)
         self.assertEqual(rc,0)
         self.assertTrue(result['compile_gate_passed'])
+
+    def test_missing_fresh_crc_or_import_version_fails_compile_gate(self):
+        for kwargs in ({'fresh_passed':False},{'coverage_passed':False}):
+            with self.subTest(kwargs=kwargs):
+                rc,result=self.run_main(True,**kwargs)
+                self.assertEqual(rc,1)
+                self.assertFalse(result['compile_gate_passed'])
 
     def test_ops_or_stock_crc_mismatch_fails_compile_gate(self):
         for args in ((False,False),(True,True)):
