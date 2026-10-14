@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "stock_module": "qca_cld3_peach_v2.ko",
+  "stock_module_sha256": "746c8459222670e7ffcbb30796c9032d59d60b6ac72f88ada435f8643a854dd2",
+  "target_vendor_commit": "6a196f79f77acd55cf302e1696c038e4cad99254",
+  "kernel_common_commit": "5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143",
+  "qcom_integration_commit": "745702d5ed2c0435f2b1d3bb78bc4f48422d4191",
+  "import_crc_count": 588,
+  "captured_provider_export_records": 532,
+  "source_verified_provider_records": 56,
+  "provider_counts": {
+    "vmlinux": 426,
+    "cnss2": 63,
+    "cfg80211": 43,
+    "ipam": 27,
+    "qmi_helpers": 8,
+    "cnss_utils": 8,
+    "qcom_va_minidump": 3,
+    "cnss_prealloc": 3,
+    "cnss_nl": 3,
+    "rproc_qcom_common": 2,
+    "sched-walt": 1,
+    "qcom_iommu_util": 1
+  },
+  "modinfo_depends": "cfg80211,cnss_prealloc,qcom_iommu_util,ipam,sched-walt,qcom_va_minidump,cnss_nl,cnss_utils,cnss2,rproc_qcom_common,qmi_helpers",
+  "symvers_sha256": "4076858debaaf71d44a4b2af3335f8f405c8d797bb5481015a2e6813ae321190",
+  "payload_base64_sha256": "ac09a5d07e4214a972e94edcdc05f787a3e3960d4e900b2ff2df75b8295f45ed",
+  "safety": "Derived metadata only. CRCs were parsed from the captured stock consumer module; provider identities/export classes are either captured exports or checked against pinned source. This profile is build input, never a byte patch to a .ko."
+}
