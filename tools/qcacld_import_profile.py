@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 META=ROOT/'profiles/stock-qcacld-peach-v2.imports.json'
 PARTS=[ROOT/f'profiles/stock-qcacld-peach-v2.imports.symvers.gz.b64.part{i}'
-       for i in range(3)]
+       for i in range(4)]
 
 def sha(data:bytes)->str:
     return hashlib.sha256(data).hexdigest()
