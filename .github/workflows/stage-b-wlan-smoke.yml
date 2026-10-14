@@ -6,6 +6,11 @@ on:
       - 'tools/build_wlan_compile_smoke.py'
       - 'tools/candidate_donor_slice.py'
       - 'tools/build_public_stage_a.py'
+      - 'tools/prepare_qcacld_modpost.py'
+      - 'tools/build_qcacld_kernel_crcs.py'
+      - 'tools/qcacld_import_profile.py'
+      - 'profiles/stock-qcacld-peach-v2.imports*'
+      - 'profiles/qcacld-backport-kernel*'
       - 'patches/**'
       - '.github/workflows/stage-b-wlan-smoke.yml'
   workflow_dispatch:
@@ -61,6 +66,16 @@ jobs:
             --kernel-source "$RUNNER_TEMP/op13t-inputs/common" \
             --clang-dir "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
             --out "$RUNNER_TEMP/stage-a"
+      - name: Prepare verified provider tables and fresh candidate-only CRCs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_qcacld_modpost.py \
+            --kernel "$RUNNER_TEMP/op13t-inputs/common" \
+            --kernel-out "$RUNNER_TEMP/stage-a/kernel-out" \
+            --compiler "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
+            --shim "$RUNNER_TEMP/stage-a/verified/wonder_shim_13t.ko" \
+            --out "$RUNNER_TEMP/qcacld-providers"
       - name: Reproduce compile-only donor candidate tree
         shell: bash
         run: |
@@ -79,7 +94,23 @@ jobs:
             --compiler "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
             --baseline "$RUNNER_TEMP/op13t-inputs/target" \
             --candidate "$RUNNER_TEMP/candidate" \
+            --baseline-symvers "$RUNNER_TEMP/qcacld-providers/qcacld-baseline-providers.symvers" \
+            --candidate-symvers "$RUNNER_TEMP/qcacld-providers/qcacld-candidate-providers.symvers" \
+            --strict-modpost \
             --out "$RUNNER_TEMP/wlan-smoke"
+          python3 - <<'PY'
+          import json, os
+          p=os.environ['RUNNER_TEMP']+'/wlan-smoke/report.json'
+          r=json.load(open(p))
+          assert r['compile_gate_passed'] is True
+          assert r['modpost_provider_gate_passed'] is True
+          assert r['module_completion_gate']=='PASSED_OFFLINE'
+          assert r['candidate_only_undefined']==[
+              'cnss_set_vendor_wonder_priv_data','dev_close','dev_open','get_random_u32']
+          assert not r['baseline_only_undefined']
+          assert r['baseline']['strict_modpost'] and r['candidate']['strict_modpost']
+          print('strict qcacld modpost provider closure passed; runtime/firmware gates remain closed')
+          PY
       - name: Preserve reports, compile logs and diagnostic .ko even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,6 +121,11 @@ jobs:
             ${{ runner.temp }}/wlan-smoke/baseline/build.log
             ${{ runner.temp }}/wlan-smoke/candidate/build.log
             ${{ runner.temp }}/candidate/backport-candidate.json
+            ${{ runner.temp }}/qcacld-providers/qcacld-modpost-providers.json
+            ${{ runner.temp }}/qcacld-providers/qcacld-kernel-crc.json
+            ${{ runner.temp }}/qcacld-providers/qcacld-kernel-checked.symvers
+            ${{ runner.temp }}/qcacld-providers/qcacld-baseline-providers.symvers
+            ${{ runner.temp }}/qcacld-providers/qcacld-candidate-providers.symvers
             ${{ runner.temp }}/wlan-smoke/baseline/src/qca_cld3_peach_v2.ko
             ${{ runner.temp }}/wlan-smoke/candidate/src/qca_cld3_peach_v2.ko
           retention-days: 14
