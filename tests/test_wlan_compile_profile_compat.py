@@ -31,6 +31,8 @@ class QcacldProfileCompatTests(unittest.TestCase):
                 'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE=y'])
             text=(root/'Kbuild').read_text(encoding='utf-8')
             self.assertEqual(text.count('$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'),1)
+            self.assertNotIn('\\\\n', text)
+            self.assertIn('HDD_OBJS += $(HDD_SRC_DIR)/wlan_hdd_beam_switch.o\n', text)
             profile_kbuild_compat(root)
             self.assertEqual((root/'Kbuild').read_text(encoding='utf-8').count(
                 '$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'),1)
