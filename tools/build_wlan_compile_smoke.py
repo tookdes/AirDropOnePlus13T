@@ -120,7 +120,8 @@ def oplus_system_shim(baseline: Path, out: Path) -> Path:
     return out/'oplus-system-headers'
 
 def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
-          out:Path, passthru:bool, plus_inc:Path)->dict:
+          out:Path, passthru:bool, plus_inc:Path,
+          extra_symvers:Path|None=None, strict_modpost:bool=False)->dict:
     cld=root/'vendor/qcom/opensource/wlan/qcacld-3.0'
     if not cld.is_dir(): raise ValueError(f'{label}: missing qcacld source')
     out.mkdir(parents=True,exist_ok=False)
@@ -163,7 +164,13 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
          'CONFIG_QCA_CLD_WLAN=m','CONFIG_QCA_CLD_WLAN_PROFILE='+PROFILE,
          'CONFIG_IPA_OUT_OF_TREE=y',
          *compat['derived_make_vars'],
-         'KBUILD_MODPOST_WARN=1','KCFLAGS='+kcflags]
+         'KCFLAGS='+kcflags]
+    if strict_modpost:
+        if not extra_symvers or not extra_symvers.is_file():
+            raise ValueError(label+': strict modpost requires checked provider symvers')
+        cmd.append('KBUILD_EXTRA_SYMBOLS='+str(extra_symvers.resolve()))
+    else:
+        cmd.append('KBUILD_MODPOST_WARN=1')
     if override: cmd.append('WLAN_CFG_OVERRIDE='+override)
     cmd.append('modules')
     rc=run(cmd,log)
@@ -182,6 +189,9 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
       'wonder_macro_enabled':'-DDRIVER_PASSTHRU_MODE' in cmdtext,
       'wonder_kcfi_enabled':'-fsanitize=kcfi' in cmdtext,
       'kbuild_profile_compat':compat,
+      'strict_modpost':strict_modpost,
+      'extra_symvers':str(extra_symvers) if extra_symvers else None,
+      'modpost_provider_gate_passed':strict_modpost and rc==0 and ko.exists(),
       'release_ready':False,'loadable_proven':False,
     }
 
@@ -193,18 +203,33 @@ def main()->int:
     ap.add_argument('--baseline',type=Path,required=True)
     ap.add_argument('--candidate',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
+    ap.add_argument('--baseline-symvers',type=Path)
+    ap.add_argument('--candidate-symvers',type=Path)
+    ap.add_argument('--strict-modpost',action='store_true')
     a=ap.parse_args(); a.out.mkdir(parents=True,exist_ok=False)
+    if a.strict_modpost and (not a.baseline_symvers or not a.candidate_symvers):
+        raise ValueError('--strict-modpost requires both provider symvers files')
     plus_inc=oplus_system_shim(a.baseline,a.out)
-    b=build('baseline',a.kernel,a.kernel_out,a.compiler,a.baseline,a.out/'baseline',False,plus_inc)
-    c=build('candidate',a.kernel,a.kernel_out,a.compiler,a.candidate,a.out/'candidate',True,plus_inc)
+    b=build('baseline',a.kernel,a.kernel_out,a.compiler,a.baseline,a.out/'baseline',False,plus_inc,
+            a.baseline_symvers,a.strict_modpost)
+    c=build('candidate',a.kernel,a.kernel_out,a.compiler,a.candidate,a.out/'candidate',True,plus_inc,
+            a.candidate_symvers,a.strict_modpost)
+    candidate_only=sorted(set(c['undefined'])-set(b['undefined']))
+    baseline_only=sorted(set(b['undefined'])-set(c['undefined']))
+    expected_new=['cnss_set_vendor_wonder_priv_data','dev_close','dev_open','get_random_u32']
+    compile_ok=b['make_rc']==0 and c['make_rc']==0 and b['relocatable_object'] and c['relocatable_object'] and \
+         c['wonder_object_selected'] and c['wonder_macro_enabled'] and c['wonder_kcfi_enabled']
+    provider_ok=a.strict_modpost and b['modpost_provider_gate_passed'] and c['modpost_provider_gate_passed'] and \
+         candidate_only==expected_new and not baseline_only
     report={'baseline':b,'candidate':c,
-      'candidate_only_undefined':sorted(set(c['undefined'])-set(b['undefined'])),
-      'baseline_only_undefined':sorted(set(b['undefined'])-set(c['undefined'])),
-      'compile_gate_passed': b['make_rc']==0 and c['make_rc']==0 and
-         b['relocatable_object'] and c['relocatable_object'] and
-         c['wonder_object_selected'] and c['wonder_macro_enabled'] and c['wonder_kcfi_enabled'],
-      'module_completion_gate':'BLOCKED',
-      'note':'KBUILD_MODPOST_WARN is compile diagnostics only; dependent vendor symbol closure is a later hard gate.'}
+      'candidate_only_undefined':candidate_only,
+      'baseline_only_undefined':baseline_only,
+      'expected_candidate_only_undefined':expected_new,
+      'compile_gate_passed':compile_ok,
+      'modpost_provider_gate_passed':provider_ok,
+      'module_completion_gate':'PASSED_OFFLINE' if provider_ok else 'BLOCKED',
+      'note':('Strict modpost resolved every undefined symbol from checked provider tables.'
+              if provider_ok else 'Provider closure is not yet a loadability claim.')}
     (a.out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
     return 0 if report['compile_gate_passed'] else 1
