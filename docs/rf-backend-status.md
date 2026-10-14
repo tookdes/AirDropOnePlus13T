@@ -8,6 +8,13 @@ The question is whether a supported bidirectional raw 802.11 backend can serve W
 
 A missing symbol is not universal impossibility proof. An interface table is not firmware capability proof. Not every opaque vendor payload has been reverse-engineered. The conclusion is narrower: **no verified supported route is available from the examined interfaces under the stated constraints**.
 
+This assessment therefore closes only the **unchanged-stock-driver shortcut**. It
+does **not** evaluate or invalidate the separate source-backport route in which
+the 13T qcacld is rebuilt with the reviewed OnePlus-15 passthru/WonderTap changes
+and paired with a separately verified compatible firmware set. That route has
+different hard gates (module/provider closure, firmware compatibility, rollback,
+and then explicit Stage-D approval) and remains unfinished.
+
 ## Capture identity and inventory
 
 Derived module hashes, not proprietary binaries:
