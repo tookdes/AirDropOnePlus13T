@@ -92,8 +92,8 @@ def profile_kbuild_compat(work: Path) -> dict:
     if obj not in text:
         if text.count(hdd_anchor)!=1: raise ValueError('Unexpected HDD Kbuild anchor')
         text=text.replace(hdd_anchor,
-            '# Diagnostic Kbuild parity with pinned Bazel OPlus source selection\\n'
-            'HDD_OBJS += '+obj+'\\n\\n'+hdd_anchor)
+            '# Diagnostic Kbuild parity with pinned Bazel OPlus source selection\n'
+            'HDD_OBJS += '+obj+'\n\n'+hdd_anchor)
         kbuild.write_text(text)
     return {'profile':PROFILE,'derived_make_vars':PROFILE_KBUILD_DERIVED,
             'beam_switch_object':obj,'source_selection':'pinned Bazel to disposable Kbuild parity'}
