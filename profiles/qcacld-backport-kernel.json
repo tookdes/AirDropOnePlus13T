@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "kernel_commit": "5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143",
+  "stock_boot_sha256": "3672b815e7afc2f6c9807d211bdbbf53757cb8537dcbc80ba5a49ff2b5a8a66e",
+  "exports_sha256": "18016013a5f94a893fd7cc1335aedf2d4edecfe47286af7bd8dfb22f5530614e",
+  "export_count": 3,
+  "kernel_objects": ["net/core/dev.o", "drivers/char/random.o"],
+  "scope": "Candidate-only core imports. CRCs are captured boot evidence and must be freshly regenerated from pinned source before modpost."
+}
