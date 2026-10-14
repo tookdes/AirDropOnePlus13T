@@ -48,6 +48,56 @@ OPLUS_SYSTEM_HEADERS = ('boot_mode.h', 'oplus_midplat.h', 'oplus_project.h',
 # profile, the stock kernel config, or the emitted (non-loadable) objects.
 VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1', 'CONFIG_ARM_SMMU=1']
 
+# The pinned profile is consumed differently by the shipping Bazel build and
+# this diagnostic Kbuild path. Bazel keys the monitor-2.0 source set from
+# CONFIG_WIFI_MONITOR_SUPPORT_Y_WLAN_TX_MON_2_0, while Kbuild tests the derived
+# CONFIG_WLAN_TX_MON_2_0 variable directly. Derive the latter only after
+# proving the exact pinned profile enables the corresponding composite keys.
+PROFILE_REQUIRED = {
+ 'CONFIG_WIFI_MONITOR_SUPPORT': 'y',
+ 'CONFIG_WIFI_MONITOR_SUPPORT_Y_WLAN_TX_MON_2_0': 'y',
+ 'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE': 'y',
+ 'CONFIG_WLAN_TX_MON_2_0_Y_WLAN_DP_LOCAL_PKT_CAPTURE': 'y',
+}
+PROFILE_KBUILD_DERIVED = [
+ 'CONFIG_WIFI_MONITOR_SUPPORT=y',
+ 'CONFIG_WLAN_TX_MON_2_0=y',
+ 'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE=y',
+]
+
+def profile_kbuild_compat(work: Path) -> dict:
+    cfg=work/'configs'/(PROFILE+'_defconfig')
+    if not cfg.is_file(): raise ValueError('Missing pinned qcacld profile: '+str(cfg))
+    values={}
+    for line in cfg.read_text(errors='strict').splitlines():
+        if line.startswith('CONFIG_') and '=' in line:
+            k,v=line.split('=',1); values[k]=v.strip()
+    bad={k:{'expected':v,'actual':values.get(k)} for k,v in PROFILE_REQUIRED.items()
+         if values.get(k)!=v}
+    if bad: raise ValueError('Pinned monitor profile drift: '+json.dumps(bad,sort_keys=True))
+
+    # OPlus ships this source in wlan_qcacld3_modules.bzl under the already
+    # pinned OPLUS_FEATURE_WIFI_BEAM_SWITCH define. Traditional Kbuild lacks
+    # that source selection, so add it only inside the disposable build copy.
+    beam='core/hdd/src/wlan_hdd_beam_switch.c'
+    bzl=work/'wlan_qcacld3_modules.bzl'
+    if not (work/beam).is_file() or not bzl.is_file():
+        raise ValueError('Missing pinned OPlus beam-switch source metadata')
+    bzl_text=bzl.read_text(errors='strict')
+    if '#ifdef OPLUS_FEATURE_WIFI_BEAM_SWITCH' not in bzl_text or ('"'+beam+'"') not in bzl_text:
+        raise ValueError('Beam-switch Bazel source contract drifted')
+    kbuild=work/'Kbuild'; text=kbuild.read_text(errors='strict')
+    obj='$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'
+    hdd_anchor='$(call add-wlan-objs,hdd,$(HDD_OBJS))'
+    if obj not in text:
+        if text.count(hdd_anchor)!=1: raise ValueError('Unexpected HDD Kbuild anchor')
+        text=text.replace(hdd_anchor,
+            '# Diagnostic Kbuild parity with pinned Bazel OPlus source selection\\n'
+            'HDD_OBJS += '+obj+'\\n\\n'+hdd_anchor)
+        kbuild.write_text(text)
+    return {'profile':PROFILE,'derived_make_vars':PROFILE_KBUILD_DERIVED,
+            'beam_switch_object':obj,'source_selection':'pinned Bazel to disposable Kbuild parity'}
+
 def oplus_system_shim(baseline: Path, out: Path) -> Path:
     """Expose the pinned 13T OPlus system headers under the kernel's
     ``soc/oplus/system`` include path.
@@ -92,6 +142,8 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
         if p.exists() or p.is_symlink(): p.unlink()
         p.symlink_to(target)
 
+    compat=profile_kbuild_compat(work)
+
     # The GKI config promotes warnings to errors (CONFIG_WERROR), and qcacld
     # adds -Wmissing-prototypes itself. The stock source is known to carry a
     # few non-static helper definitions without prototypes (e.g. an OPlus
@@ -110,6 +162,7 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
          'M='+str(work),'WLAN_ROOT='+str(work),'MODNAME='+MODNAME,
          'CONFIG_QCA_CLD_WLAN=m','CONFIG_QCA_CLD_WLAN_PROFILE='+PROFILE,
          'CONFIG_IPA_OUT_OF_TREE=y',
+         *compat['derived_make_vars'],
          'KBUILD_MODPOST_WARN=1','KCFLAGS='+kcflags]
     if override: cmd.append('WLAN_CFG_OVERRIDE='+override)
     cmd.append('modules')
@@ -128,6 +181,7 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
       'wonder_compile_cmd_present':wonder_cmd.exists(),
       'wonder_macro_enabled':'-DDRIVER_PASSTHRU_MODE' in cmdtext,
       'wonder_kcfi_enabled':'-fsanitize=kcfi' in cmdtext,
+      'kbuild_profile_compat':compat,
       'release_ready':False,'loadable_proven':False,
     }
 
