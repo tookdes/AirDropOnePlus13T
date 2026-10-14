@@ -14,7 +14,13 @@ Source-based WonderTap backport for OnePlus 13T (PJD110 / OP612BL1), targeting t
 
 ## Safety boundary
 
-- Do not replace/unload stock `qca_cld3`, `cfg80211`, or `mac80211`, or flash partitions.
+The following is the **current device-testing gate**, not a declaration that the
+source-backport architecture is abandoned. The read-only RF assessment below
+tests routes available while the shipping Wi-Fi stack is left unchanged. The
+separate patched-qcacld + compatible-firmware route remains an unfinished
+engineering path and is not approved for device bring-up yet.
+
+- Do not currently replace/unload stock `qca_cld3`, `cfg80211`, or `mac80211`, or flash partitions, until the patched-driver module/ABI closure, matching firmware set, and rollback preflight are complete.
 - Any module operation, interface creation/UP/DOWN/deletion, DT edit, capture enablement, channel change, or firmware command requires explicit stage-specific approval and a fresh read-only preflight.
 - Never use `physical_name=wlan0`: Wonder would register an RX handler on stock Wi-Fi and can disrupt connectivity.
 - Never patch module CRCs/vermagic/KCFI, call private functions by guessed address, or package candidate wireless modules in a KernelSU installer.
@@ -58,6 +64,12 @@ The captured stock module inventory and pinned-source route analysis found:
 - OEM firmware commands remain **unproven opaque protocols**, not a validated injection backend. Static firmware strings are not capability proof.
 
 **Conclusion:** no supported bidirectional raw 802.11 backend has been verified for these captured interfaces while keeping the stock driver unchanged. This does not prove every conceivable firmware path impossible. There is no justification to repeat software-monitor UP tests or ship a pretend radio bridge.
+
+**Scope of that conclusion:** it closes the unchanged-stock-driver shortcut, not
+the original OnePlus 15 → 13T passthru backport. The latter still requires a
+completed/loadable patched qcacld, the Wonder provider/shim contract, a verified
+compatible GNG.2.0 firmware set, and an explicit rollback-guarded Stage-D
+preflight before any state-changing phone test.
 
 See [the RF route assessment](docs/rf-backend-status.md) for the evidence scope, reproducible read-only audit, unknowns, and requirements for reopening the RF gate.
 
