@@ -1,0 +1,268 @@
+{
+  "schema": 1,
+  "source_qcacld_sha256": "746c8459222670e7ffcbb30796c9032d59d60b6ac72f88ada435f8643a854dd2",
+  "scope": "Derived relocation-table metadata from the captured stock qcacld. Callback offsets only; not full struct/type/KCFI proof.",
+  "object_bytes": 1032,
+  "callbacks": [
+    {
+      "offset": 0,
+      "symbol": "wlan_hdd_cfg80211_suspend_wlan"
+    },
+    {
+      "offset": 8,
+      "symbol": "wlan_hdd_cfg80211_resume_wlan"
+    },
+    {
+      "offset": 24,
+      "symbol": "wlan_hdd_add_virtual_intf"
+    },
+    {
+      "offset": 32,
+      "symbol": "wlan_hdd_del_virtual_intf"
+    },
+    {
+      "offset": 40,
+      "symbol": "wlan_hdd_cfg80211_change_iface"
+    },
+    {
+      "offset": 48,
+      "symbol": "wlan_hdd_cfg80211_add_intf_link"
+    },
+    {
+      "offset": 56,
+      "symbol": "wlan_hdd_cfg80211_del_intf_link"
+    },
+    {
+      "offset": 64,
+      "symbol": "wlan_hdd_cfg80211_add_key"
+    },
+    {
+      "offset": 72,
+      "symbol": "wlan_hdd_cfg80211_get_key"
+    },
+    {
+      "offset": 80,
+      "symbol": "wlan_hdd_cfg80211_del_key"
+    },
+    {
+      "offset": 88,
+      "symbol": "wlan_hdd_cfg80211_set_default_key"
+    },
+    {
+      "offset": 96,
+      "symbol": "wlan_hdd_set_default_mgmt_key"
+    },
+    {
+      "offset": 104,
+      "symbol": "wlan_hdd_cfg80211_set_default_beacon_key"
+    },
+    {
+      "offset": 112,
+      "symbol": "wlan_hdd_cfg80211_start_ap"
+    },
+    {
+      "offset": 120,
+      "symbol": "wlan_hdd_cfg80211_change_beacon"
+    },
+    {
+      "offset": 128,
+      "symbol": "wlan_hdd_cfg80211_stop_ap"
+    },
+    {
+      "offset": 136,
+      "symbol": "wlan_hdd_cfg80211_add_station"
+    },
+    {
+      "offset": 144,
+      "symbol": "wlan_hdd_cfg80211_del_station"
+    },
+    {
+      "offset": 152,
+      "symbol": "wlan_hdd_change_station"
+    },
+    {
+      "offset": 160,
+      "symbol": "wlan_hdd_cfg80211_get_station"
+    },
+    {
+      "offset": 168,
+      "symbol": "wlan_hdd_cfg80211_dump_station"
+    },
+    {
+      "offset": 280,
+      "symbol": "wlan_hdd_cfg80211_change_bss"
+    },
+    {
+      "offset": 296,
+      "symbol": "wlan_hdd_set_txq_params"
+    },
+    {
+      "offset": 312,
+      "symbol": "wlan_hdd_cfg80211_set_mon_ch"
+    },
+    {
+      "offset": 320,
+      "symbol": "wlan_hdd_cfg80211_scan"
+    },
+    {
+      "offset": 328,
+      "symbol": "wlan_hdd_cfg80211_abort_scan"
+    },
+    {
+      "offset": 368,
+      "symbol": "wlan_hdd_cfg80211_connect"
+    },
+    {
+      "offset": 376,
+      "symbol": "wlan_hdd_cfg80211_update_connect_params"
+    },
+    {
+      "offset": 384,
+      "symbol": "wlan_hdd_cfg80211_disconnect"
+    },
+    {
+      "offset": 416,
+      "symbol": "wlan_hdd_cfg80211_set_wiphy_params"
+    },
+    {
+      "offset": 424,
+      "symbol": "wlan_hdd_cfg80211_set_txpower"
+    },
+    {
+      "offset": 432,
+      "symbol": "wlan_hdd_cfg80211_get_txpower"
+    },
+    {
+      "offset": 448,
+      "symbol": "wlan_hdd_cfg80211_testmode"
+    },
+    {
+      "offset": 464,
+      "symbol": "wlan_hdd_cfg80211_set_bitrate_mask"
+    },
+    {
+      "offset": 472,
+      "symbol": "wlan_hdd_cfg80211_dump_survey"
+    },
+    {
+      "offset": 480,
+      "symbol": "wlan_hdd_cfg80211_set_pmksa"
+    },
+    {
+      "offset": 488,
+      "symbol": "wlan_hdd_cfg80211_del_pmksa"
+    },
+    {
+      "offset": 496,
+      "symbol": "wlan_hdd_cfg80211_flush_pmksa"
+    },
+    {
+      "offset": 504,
+      "symbol": "wlan_hdd_cfg80211_remain_on_channel"
+    },
+    {
+      "offset": 512,
+      "symbol": "wlan_hdd_cfg80211_cancel_remain_on_channel"
+    },
+    {
+      "offset": 520,
+      "symbol": "wlan_hdd_mgmt_tx"
+    },
+    {
+      "offset": 528,
+      "symbol": "wlan_hdd_cfg80211_mgmt_tx_cancel_wait"
+    },
+    {
+      "offset": 536,
+      "symbol": "wlan_hdd_cfg80211_set_power_mgmt"
+    },
+    {
+      "offset": 568,
+      "symbol": "wlan_hdd_cfg80211_update_mgmt_frame_registrations"
+    },
+    {
+      "offset": 576,
+      "symbol": "wlan_hdd_cfg80211_set_chainmask"
+    },
+    {
+      "offset": 584,
+      "symbol": "wlan_hdd_cfg80211_get_chainmask"
+    },
+    {
+      "offset": 592,
+      "symbol": "wlan_hdd_cfg80211_sched_scan_start"
+    },
+    {
+      "offset": 600,
+      "symbol": "wlan_hdd_cfg80211_sched_scan_stop"
+    },
+    {
+      "offset": 608,
+      "symbol": "wlan_hdd_cfg80211_set_rekey_data"
+    },
+    {
+      "offset": 616,
+      "symbol": "wlan_hdd_cfg80211_tdls_mgmt"
+    },
+    {
+      "offset": 624,
+      "symbol": "wlan_hdd_cfg80211_tdls_oper"
+    },
+    {
+      "offset": 648,
+      "symbol": "wlan_hdd_cfg80211_get_channel"
+    },
+    {
+      "offset": 672,
+      "symbol": "wlan_hdd_cfg80211_set_mac_acl"
+    },
+    {
+      "offset": 696,
+      "symbol": "wlan_hdd_cfg80211_update_ft_ies"
+    },
+    {
+      "offset": 728,
+      "symbol": "wlan_hdd_cfg80211_channel_switch"
+    },
+    {
+      "offset": 744,
+      "symbol": "wlan_hdd_cfg80211_set_ap_channel_width"
+    },
+    {
+      "offset": 784,
+      "symbol": "wlan_hdd_cfg80211_start_nan"
+    },
+    {
+      "offset": 792,
+      "symbol": "wlan_hdd_cfg80211_stop_nan"
+    },
+    {
+      "offset": 800,
+      "symbol": "wlan_hdd_cfg80211_add_nan_func"
+    },
+    {
+      "offset": 808,
+      "symbol": "wlan_hdd_cfg80211_del_nan_func"
+    },
+    {
+      "offset": 816,
+      "symbol": "wlan_hdd_cfg80211_nan_change_conf"
+    },
+    {
+      "offset": 856,
+      "symbol": "wlan_hdd_cfg80211_external_auth"
+    },
+    {
+      "offset": 864,
+      "symbol": "wlan_hdd_cfg80211_tx_control_port"
+    },
+    {
+      "offset": 896,
+      "symbol": "wlan_hdd_cfg80211_update_owe_info"
+    },
+    {
+      "offset": 992,
+      "symbol": "wlan_hdd_cfg80211_set_ttlm_mapping"
+    }
+  ]
+}

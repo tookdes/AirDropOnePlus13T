@@ -10,16 +10,26 @@ on:
       - 'tools/build_qcacld_kernel_crcs.py'
       - 'tools/qcacld_import_profile.py'
       - 'tools/audit_qcacld_artifact.py'
+      - 'tools/audit_qcacld_callbacks.py'
+      - 'tools/review_donor_frontier.py'
       - 'profiles/stock-qcacld-peach-v2.imports*'
       - 'profiles/stock-qcacld-peach-v2.provider-evidence.json'
       - 'profiles/qcacld-backport-kernel*'
+      - 'profiles/qcacld-minimized-frontier.json'
+      - 'profiles/stock-qcacld-cfg80211-callbacks.json'
       - 'patches/**'
       - '.github/workflows/stage-b-wlan-smoke.yml'
   workflow_dispatch:
+    inputs:
+      minimized:
+        description: Use the experimental 40-path target-specific frontier
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
-  group: op13t-wlan-smoke-${{ github.ref }}
+  group: op13t-wlan-smoke-${{ github.ref }}-${{ inputs.minimized && 'minimized' || 'broad' }}
   cancel-in-progress: true
 jobs:
   build:
@@ -82,7 +92,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tools/candidate_donor_slice.py \
+          args=()
+          if [ "${{ inputs.minimized }}" = "true" ]; then
+            args+=(--frontier-profile profiles/qcacld-minimized-frontier.json)
+          fi
+          python3 tools/candidate_donor_slice.py "${args[@]}" \
             --target "$RUNNER_TEMP/op13t-inputs/target" \
             --donor "$RUNNER_TEMP/op13t-inputs/donor" \
             --output "$RUNNER_TEMP/candidate"
@@ -132,6 +146,7 @@ jobs:
           name: op13t-qcacld-audit-evidence
           path: |
             ${{ runner.temp }}/qcacld-frozen/manifest.json
+            ${{ runner.temp }}/qcacld-frozen/commands
             ${{ runner.temp }}/qcacld-frozen/kernel
             ${{ runner.temp }}/qcacld-frozen/providers
             ${{ runner.temp }}/qcacld-frozen/reports

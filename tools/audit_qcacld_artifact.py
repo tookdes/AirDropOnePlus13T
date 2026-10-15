@@ -15,6 +15,7 @@ from elf_audit import Module
 from prepare_qcacld_modpost import read_symvers
 from build_wlan_compile_smoke import TARGET_RELEASE
 from stock_image import module_exports
+from audit_qcacld_callbacks import audit as audit_callbacks
 
 EXPECTED_NEW = {'cnss_set_vendor_wonder_priv_data', 'dev_close', 'dev_open', 'get_random_u32'}
 REQUIRED_CONFIG = ('CONFIG_MODVERSIONS=y', 'CONFIG_MODULE_UNLOAD=y', 'CONFIG_CFI_CLANG=y')
@@ -82,9 +83,14 @@ def audit_module(path: Path, providers: dict, *, name: str, candidate: bool) -> 
     section = mod.sections.get('.gnu.linkonce.this_module')
     report = check_description(desc, providers, name=name, candidate=candidate,
                                module_size=section[5] if section else 0)
-    if name == 'qca_cld3_peach_v2' and module_exports(path):
-        report['errors'].append('Unexpected qcacld exports')
-        report['metadata_gate_passed'] = False
+    if name == 'qca_cld3_peach_v2':
+        exports=module_exports(path)
+        report['export_count']=len(exports)
+        report['export_names']=[r['name'] for r in exports]
+        report['cfg80211_callback_slots']=audit_callbacks(path)
+        if exports:
+            report['errors'].append('Unexpected qcacld exports')
+            report['metadata_gate_passed'] = False
     return report, set(desc['undefined_strong'])
 
 
@@ -110,6 +116,9 @@ def freeze(stage_a: Path, providers: Path, smoke: Path, candidate_tree: Path,
         'providers/fresh-core.symvers': providers/'qcacld-kernel-checked.symvers',
         'logs/baseline.log': smoke/'baseline/build.log',
         'logs/candidate.log': smoke/'candidate/build.log',
+        'commands/baseline-cfg80211.cmd': smoke/'baseline/src/core/hdd/src/.wlan_hdd_cfg80211.o.cmd',
+        'commands/candidate-cfg80211.cmd': smoke/'candidate/src/core/hdd/src/.wlan_hdd_cfg80211.o.cmd',
+        'commands/candidate-wonder.cmd': smoke/'candidate/src/core/hdd/src/.wlan_hdd_wondertap.o.cmd',
     }
     files = []
     for rel, src in inputs.items():
@@ -181,6 +190,7 @@ def freeze(stage_a: Path, providers: Path, smoke: Path, candidate_tree: Path,
                               'donor_intro': '307d23721d20e21b8160b9ba9c3cb50911ff8c00'},
               'files': files, 'debug_stripped_derivatives': derivatives, 'modules': audits, 'final_elf_import_delta_passed': difference_ok,
               'final_elf_metadata_gate_passed': difference_ok and all(r['metadata_gate_passed'] for r in audits.values()),
+              'cfg80211_callback_slot_gate_passed': all(audits[l]['cfg80211_callback_slots']['callback_slot_gate_passed'] for l in ('baseline','candidate')),
               'loadable_proven': False, 'release_ready': False, 'firmware_compatible_proven': False,
               'rf_proven': False, 'installer': False}
     (out/'manifest.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
@@ -199,7 +209,7 @@ def main() -> int:
         print('Strict artifact freeze failed: '+str(exc))
         return 1
     print(json.dumps(report, indent=2))
-    return 0 if report['final_elf_metadata_gate_passed'] else 1
+    return 0 if report['final_elf_metadata_gate_passed'] and report['cfg80211_callback_slot_gate_passed'] else 1
 
 
 if __name__ == '__main__':

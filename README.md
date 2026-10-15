@@ -86,3 +86,9 @@ The stock consumer's **588 version records now all have actual captured-provider
 The optional Stage A KernelSU archive is a **probe-only file staging package**, not AirDrop. It does not autoload the probes. Wireless smoke outputs are diagnostics, not replacements for the loaded stock providers.
 
 The offline assessment adds `tools/audit_rf_backend.py` and 19 self-contained tests. The final local LF-normalized regression snapshot ran **135 tests, all passing, zero skipped**, including private stock integration. Host C mocks used existing Windows clang/MSVC facilities with enforcing UBSan traps and explicit compatibility headers; this is not a new Linux CI run or a fresh target-kernel build. No persistent Git configuration or target module bytes were changed.
+
+## Current patched-driver safety gate
+
+The new final-ELF check on run **38699838731** deliberately failed despite strict modpost success: the rebuilt baseline/candidate exported **1044/1045 symbols**, unlike stock's zero-export policy. A subsequent local ELF audit also proved **32 cfg80211 callbacks were shifted by 0x10**, with a 1016-byte ops table instead of stock 1032 bytes (missing testmode slots). **Do not load those artifacts.** A corrective build enables the matched vendor testmode header/Kbuild branches and QDF no-export policy, and enforces the actual compiled callback table, rather than changing CRC bytes.
+
+An optional initial 13T-specific minimization profile reduces the extra donor frontier from **44 paths / 196 hunks to 40 paths / 182 hunks**, excluding unrelated crypto, donor DT, off-target HAL registrations and standalone copyright edits. This is still not a production-reviewed patch series. See [patched-driver execution gates](docs/patched-qcacld-execution-gates.md) for the source, firmware, independent-control and approval boundaries.

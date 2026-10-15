@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import prepare_qcacld_modpost as prep
+import build_qcacld_kernel_crcs as fresh_core
 from audit_qcacld_artifact import check_description, combine_tables, EXPECTED_NEW
 from build_wlan_compile_smoke import TARGET_RELEASE, exit_status
 
@@ -138,6 +139,38 @@ class ProviderAssemblyTests(unittest.TestCase):
                         self.assertEqual(r['candidate_extra_provider_rows'],4)
                     else:
                         with self.assertRaises(ValueError):prep.prepare(root,kout,root,root/'shim.ko',out)
+
+
+class FreshCoreCrcTests(unittest.TestCase):
+    def fixture(self, root, case):
+        kout=root/'kernel';out=root/'out';out.mkdir();kout.mkdir()
+        expected={'dev_close':0x3d8d1736,'dev_open':0x2db1f9fe,'get_random_u32':0xd36dc10c}
+        rows=[row(n,f'0x{v:08x}') for n,v in expected.items()]
+        prep.write(kout/'Module.symvers',[row('dev_open','0xffffffff')] if case=='existing_conflict' else [])
+        for obj in fresh_core.OBJECTS:
+            f=Path(obj);cmd=kout/f.parent/('.'+f.name+'.cmd');cmd.parent.mkdir(parents=True,exist_ok=True)
+            values=({'get_random_u32':expected['get_random_u32']} if 'random' in obj else
+                    {'dev_close':expected['dev_close'],'dev_open':expected['dev_open']})
+            if case=='missing' and 'random' in obj:values={}
+            if case=='mismatch' and 'random' in obj:values['get_random_u32']=1
+            if case=='cross_object_conflict' and 'random' in obj:values['dev_open']=1
+            cmd.write_text(''.join(f'#SYMVER {n} 0x{v:08x}\n' for n,v in values.items()),encoding='ascii')
+        return kout,out,expected,rows
+
+    def test_fresh_object_gate_accepts_exact_regeneration_only(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);kout,out,expected,rows=self.fixture(root,'success')
+            with patch.object(fresh_core,'load_profile',return_value=({'exports_sha256':'a'*64},expected,rows)),patch.object(fresh_core,'run') as run:
+                _,r=fresh_core.prepare(root,kout,['make'],out)
+                self.assertTrue(r['fresh_kernel_crc_gate_passed']);self.assertFalse(r['loadable_proven'])
+                run.assert_called_once_with(['make',*fresh_core.OBJECTS],out/'qcacld-kernel-crc-build.log')
+
+    def test_missing_mismatch_conflicting_objects_or_existing_export_fail(self):
+        for case in ('missing','mismatch','cross_object_conflict','existing_conflict'):
+            with self.subTest(case=case),tempfile.TemporaryDirectory() as td:
+                root=Path(td);kout,out,expected,rows=self.fixture(root,case)
+                with patch.object(fresh_core,'load_profile',return_value=({'exports_sha256':'a'*64},expected,rows)),patch.object(fresh_core,'run'),self.assertRaises(ValueError):
+                    fresh_core.prepare(root,kout,['make'],out)
 
 
 if __name__=='__main__':unittest.main()

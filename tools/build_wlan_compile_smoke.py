@@ -45,7 +45,10 @@ OPLUS_SYSTEM_HEADERS = ('boot_mode.h', 'oplus_midplat.h', 'oplus_project.h',
 # is required for a compile-only reproduction. These -D flags only steer header
 # selection in the copied public sources; they never alter the checked-in ABI
 # profile, the stock kernel config, or the emitted (non-loadable) objects.
-VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1', 'CONFIG_ARM_SMMU=1']
+# Captured stock cfg80211_ops is 1032 bytes; GKI without TESTMODE is 1016.
+# Select the vendor header branch in this module build only, never edit CRCs.
+VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1', 'CONFIG_ARM_SMMU=1',
+                                'CONFIG_NL80211_TESTMODE=1']
 
 # The pinned profile is consumed differently by the shipping Bazel build and
 # this diagnostic Kbuild path. Bazel keys the monitor-2.0 source set from
@@ -62,6 +65,9 @@ PROFILE_KBUILD_DERIVED = [
  'CONFIG_WIFI_MONITOR_SUPPORT=y',
  'CONFIG_WLAN_TX_MON_2_0=y',
  'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE=y',
+ # Captured vendor cfg80211 callback layout and zero-export qcacld policy.
+ 'CONFIG_NL80211_TESTMODE=y',
+ 'CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y',
 ]
 
 def profile_kbuild_compat(work: Path) -> dict:
@@ -85,7 +91,16 @@ def profile_kbuild_compat(work: Path) -> dict:
     bzl_text=bzl.read_text(errors='strict')
     if '#ifdef OPLUS_FEATURE_WIFI_BEAM_SWITCH' not in bzl_text or ('"'+beam+'"') not in bzl_text:
         raise ValueError('Beam-switch Bazel source contract drifted')
+    export_header=work/'cmn/qdf/linux/src/i_qdf_module.h'
+    if not export_header.is_file():
+        raise ValueError('Missing QDF export-policy header')
+    export_text=export_header.read_text(errors='strict')
+    if ('#ifdef WLAN_DISABLE_EXPORT_SYMBOL' not in export_text or
+            '#define __qdf_export_symbol(_sym)' not in export_text):
+        raise ValueError('QDF no-export source contract drifted')
     kbuild=work/'Kbuild'; text=kbuild.read_text(errors='strict')
+    if 'ccflags-$(CONFIG_WLAN_DISABLE_EXPORT_SYMBOL) += -DWLAN_DISABLE_EXPORT_SYMBOL' not in text:
+        raise ValueError('QDF no-export Kbuild contract drifted')
     obj='$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'
     hdd_anchor='$(call add-wlan-objs,hdd,$(HDD_OBJS))'
     if obj not in text:
@@ -188,6 +203,8 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
       'wonder_macro_enabled':'-DDRIVER_PASSTHRU_MODE' in cmdtext,
       'wonder_kcfi_enabled':'-fsanitize=kcfi' in cmdtext,
       'kbuild_profile_compat':compat,
+      'vendor_header_config_defines':VENDOR_KERNEL_CONFIG_DEFINES,
+      'build_command':cmd,
       'strict_modpost':strict_modpost,
       'extra_symvers':str(extra_symvers) if extra_symvers else None,
       'modpost_provider_gate_passed':strict_modpost and rc==0 and ko.exists(),

@@ -1,0 +1,617 @@
+{
+  "schema": 1,
+  "target_vendor_commit": "6a196f79f77acd55cf302e1696c038e4cad99254",
+  "donor_intro": "307d23721d20e21b8160b9ba9c3cb50911ff8c00",
+  "donor_parent": "7fb7abf097a18c6e2ad2fb9d18876b095898e87f",
+  "original_path_set_sha256": "c8423910558b44d6ccaeb23587e18a296720be7e7a21befe50e220928aafd634",
+  "expected_retained_path_count": 40,
+  "review_status": "INITIAL_GROUPED_SOURCE_REVIEW",
+  "production_review_complete": false,
+  "release_ready": false,
+  "paths": [
+    {
+      "path": "vendor/qcom/opensource/wlan/platform/cnss_utils/cnss_common.h",
+      "canonical_diff_sha256": "9125041c5329948efbec45c29f2e3b5950684b2a47792d9d49139b5efc33843c",
+      "hunk_sha256": [
+        "11fcb48c939d877645a7fb39994dfd917fa70ae64074000886544ce27d74734a"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Private Wonder provider device-ID constant used by the vendor-provider bridge, not a firmware compatibility claim."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/be/dp_be_rx.c",
+      "canonical_diff_sha256": "7202abcb5c74ca0d03c81f207e69c10e4d937bf063c7585e3321244876554825",
+      "hunk_sha256": [
+        "e7dd03c04ff0062381f65d04d3a012a7816408f306f0dc320d364758e4c12795"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_main.c",
+      "canonical_diff_sha256": "0ba6a68efda387f71ef1c3d524b661d89808c9157eaf8c36bec02519bd6635ff",
+      "hunk_sha256": [
+        "0189ad6d274057d907cad3cc529e74d938ec2edeab936bf24dc9c94f660f445b",
+        "04ccda698e3732839fab968d82e4aaf6e1cc4074b760e6f509cfe3daf639f532",
+        "1b97a368a09c3fe166c7e693801a51eb85dcca5b1fa2d9b92e9185ba96cbf91e",
+        "ff2de0fb1ff02ead245f66886e532da01c7a2782edaee652bfc99699fa0370b9"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_peer.c",
+      "canonical_diff_sha256": "2f360282d296063576ef69d127aa2078821c24b4835d8349b31c0e7018ca993c",
+      "hunk_sha256": [
+        "87f095ab0257a77ddb7b2b4294a5e415055a296de818ccd9800298bd8c07c888"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_rx.c",
+      "canonical_diff_sha256": "78f176ca0f15dd9ecf4e80743681e2e71c9dbdb27316bc1081ccaeead7a72874",
+      "hunk_sha256": [
+        "159bf3efd48c0daeb5a30369b29e36537cef21fc991c24dafebde3121c81635e",
+        "b3fe6d403704f4aef2b9ae9a0722452ab7dda00601f780a02d19ad307b795190",
+        "eaed1167191589e801408595cd7bf41c4fcefb2220424c08c545c89c5f0ef191",
+        "13e4b7afbc3922f9c47a63e0bf8922b729eb846ab3394ad8c0c970f3cd051ab7",
+        "e380793717dc522bdaa8cb37cb4b2524b33ba5007f39b783ed7771225c8c2184",
+        "49a85c0f37448e93242b3baa1567a309fb5608502c32da449754feee8f2cd73a",
+        "b08a2d4951431c41c42f0dd5d65c13ec25e432fa392e0387622e6b18db62b44a",
+        "ec5440cef58b78e8902b6e53ac3ae68c5b260625255b7306ba841896ceb118ab",
+        "be039d0115f3389895e8759b8d27532ed7ac87e2dcf360ebcee5e88910e2895d"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_rx.h",
+      "canonical_diff_sha256": "5ccff2ca42e593d9b080b592e0f155055f47627f0848ec8369bd63483a9e4fd8",
+      "hunk_sha256": [
+        "4e32fb4614e5df158cced4893c74e587f56c21e7f488caf588614b6c53921660"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_rx_err.c",
+      "canonical_diff_sha256": "eb48a295d272e9b99d2ea62e91327d7ac0161dd7a296864d989fde91535f6156",
+      "hunk_sha256": [
+        "7a7713bba28fd47d01630ab8a28c09c84f20924327560546ce21aa77b325b53f",
+        "3b1699d14428a2f1341d31e8e49b3a3a2443908355c72cc5a6ddab0b35a816e2"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/dp_stats.c",
+      "canonical_diff_sha256": "44040efe75975037f4217a3d082707359409b3996ae44ec411a48c15326bbc82",
+      "hunk_sha256": [
+        "7f4c085c3224ae7a907e1e9c5cf1d98be1108885bf3a1ce850e184a4b8dc9864"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/li/dp_li_rx.c",
+      "canonical_diff_sha256": "97d09f94ea3631e2da521917e22b7cb0ab5bde5ee8eb58ecdf8c6dba11d8c613",
+      "hunk_sha256": [
+        "1be5e6bc61ab85537b3e564a7cc381a7255b318a5158b6c5f9f573fade4d9b3d",
+        "d57505924e3de38aa68a5657734700b7b22ef249dd74e2676593a94546843e5d"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/dp/wifi3.0/rh/dp_rh_rx.c",
+      "canonical_diff_sha256": "1fa6fc4b7204665ddc4a664bfe0b636ddb2dd0967d59c60b39c8036a991f5eeb",
+      "hunk_sha256": [
+        "4640def11914a37c5146ac18ec31ed98bb7b087316c1fcdde281729a7a8fdbd0"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/be/hal_be_rx_tlv.h",
+      "canonical_diff_sha256": "80383e9143498643426dddac562b8e1dc083718cc20920c436aa8d0992cf9060",
+      "hunk_sha256": [
+        "3bdb9405867912c7874002139279a59ae2f5a506115b46bdf0c61bc96459bc08"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Target/common RX L3 padding setter contract needed when preserving raw passthru MSDU payload, including the target peach HAL callback."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/hal_internal.h",
+      "canonical_diff_sha256": "c810e09d730e401b441fed1986beabaaa5b05a4eb066a68748538400f4421395",
+      "hunk_sha256": [
+        "f6a18da207e00d2c958bbc503ce288b3a1c4e5ffc22352b62c5bbb4651dd3c23",
+        "d725b34a3ff63d9b456be0d382c61e0602c7b741866a5229f07b66e5a8af0a3b"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Target/common RX L3 padding setter contract needed when preserving raw passthru MSDU payload, including the target peach HAL callback."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/hal_rx.h",
+      "canonical_diff_sha256": "bd91875672c7b5737657ab982d0d5d0462966042d7d7b0432f0c78e7cb3a1b3d",
+      "hunk_sha256": [
+        "955f8d5f290cab67867677a312b7ad856f347ff7b68f94be7d5a9bf40da38da2",
+        "356fd55ea0b4fd5e4a5e84d96f308d60ba5254b8bb311dfd253fc1bdc29ad371"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Target/common RX L3 padding setter contract needed when preserving raw passthru MSDU payload, including the target peach HAL callback."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/kiwi/hal_kiwi.c",
+      "canonical_diff_sha256": "e25a49dae775377cd015965c24ea29e2c82239d3c753cc52b413202dd0c2f013",
+      "hunk_sha256": [
+        "7ab622c51ec8a0049baadd677d9b965f7bbcc23dddb95a98ee1ff48163654be6",
+        "168d462c3fa8db29a7d5b13e68a36075b9f3b06c84534290d693ab6fc2859de6",
+        "04434d79d80d4d3161d7a24aea39c4a3622bcddbbc36d84f9a427fdcaa3c7a1a"
+      ],
+      "action": "drop",
+      "drop_copyright_hunks": [],
+      "rationale": "Off-target HAL registration for another chipset. Keep target peach padding callback support; this is a 13T-specific candidate."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/peach/hal_peach.c",
+      "canonical_diff_sha256": "4c19eb8f8966033f3db76e913ac242e512d3718a87c52cb3a47b1a4ffebafd77",
+      "hunk_sha256": [
+        "2bf15165a81ea86ac11d42254782b3cfb14092a86528f8b82c2c21761c9b9f92",
+        "417a78d76e81e7133dec2263342413f1fb3356eeb8340336bfce96cfb4a81539",
+        "18c50b5b45dd250f693ee7ba63e3cb9e59e89de4f3e49ec153faf3d182daded2"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Target/common RX L3 padding setter contract needed when preserving raw passthru MSDU payload, including the target peach HAL callback."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hal/wifi3.0/qcc2072/hal_qcc2072.c",
+      "canonical_diff_sha256": "169251e077b5ddbb8fa4b273a61ec7f00eb4b57f2ebd3bf4bf619284c9465e4d",
+      "hunk_sha256": [
+        "877b0829212ccfdd94584c1f7d8728ae683b7a8f1e7fca411c71cdad20a30636"
+      ],
+      "action": "drop",
+      "drop_copyright_hunks": [],
+      "rationale": "Off-target HAL registration for another chipset. Keep target peach padding callback support; this is a 13T-specific candidate."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/inc/qdf_nbuf.h",
+      "canonical_diff_sha256": "a27495f1ff2133865c2366ec16da2e58e6ea14ea048b90be12180f1b0900430e",
+      "hunk_sha256": [
+        "91c7fd0c34cd06fced7ea7de218ee6c6078807bfd7c0857cd715c8ae71c86188",
+        "601f923dd71346c4cb731a76ae15c9cf4db2f4d3c9d2089c6e4d67fb5a63bb45"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Raw/radiotap buffer helpers and rate metadata consumed by the passthru data path; retain the zero-rate radiotap guard with those helpers."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/i_qdf_nbuf.h",
+      "canonical_diff_sha256": "7272ae33058dc459cdf8235dcc7e20789eaab5f5f58c99126230187a47df828d",
+      "hunk_sha256": [
+        "56dbb45e5ef19821594f8b77b9a6a7baee4ad2586f3dfd1362622bdb0414571f"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Raw/radiotap buffer helpers and rate metadata consumed by the passthru data path; retain the zero-rate radiotap guard with those helpers."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/qdf/linux/src/qdf_nbuf.c",
+      "canonical_diff_sha256": "00fe4d854e68bde52f8217e8d796ff0ab28473902d7bd740e9c3d0e5dc383240",
+      "hunk_sha256": [
+        "07611dca2597243681156c68e09ade2aa2bc4632b06b26b0190915e68cbaa5a5",
+        "9a48fd97942750c079de013d135095de0856292a357885295860caf5f99fcd8b"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Raw/radiotap buffer helpers and rate metadata consumed by the passthru data path; retain the zero-rate radiotap guard with those helpers."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/cmn_services/crypto/src/wlan_crypto_global_api.c",
+      "canonical_diff_sha256": "f6395685adee4f0219637bf6b618e512a3a1e20005041b139cca16375116ff1e",
+      "hunk_sha256": [
+        "bc3ca62722b64118bebc733be6eeaa763f22e4d9edb38caf5c981258c83501da",
+        "74985739e548b79b2c9ddff5a8e6878613b8004a1369c4d2f5b3d122e0040e85",
+        "07e510bf2cbea9a375b1259ba08e06d4865e8ca009b0eeb6000837a5be5e19b8"
+      ],
+      "action": "drop",
+      "drop_copyright_hunks": [],
+      "rationale": "Unrelated zero-PMKID behavior fix, not a passthru dependency. Preserve the pinned 13T crypto baseline."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/cmn_services/obj_mgr/src/wlan_objmgr_vdev_obj.c",
+      "canonical_diff_sha256": "7c464ae542f70e35b88492575733c6881a120b8fd6121088ee65e2ee1d49431a",
+      "hunk_sha256": [
+        "31092b621fee942954e17200f6e792b1ca181cdcdae4f5597caa46d1f892c7cb"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru vdev/BSS peer association and lifecycle adaptation used by the Wonder vendor handle."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/inc/wlan_vdev_mgr_api.h",
+      "canonical_diff_sha256": "5b002b830251074b39a208bd3f38a90ae48676afaac107c10f99260b6f226add",
+      "hunk_sha256": [
+        "f6c529be6cdf569b35e726d639deba3246bfdcc2d3a225261f42083bbfc331a0",
+        "20205cee9ddd300226cbfe2d4c87f7ddcc28f45c7a1856cf5cf7112ef3372be8"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "f6c529be6cdf569b35e726d639deba3246bfdcc2d3a225261f42083bbfc331a0"
+      ],
+      "rationale": "Passthru vdev/BSS peer association and lifecycle adaptation used by the Wonder vendor handle."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qca-wifi-host-cmn/umac/mlme/vdev_mgr/dispatcher/src/wlan_vdev_mgr_api.c",
+      "canonical_diff_sha256": "105b2e8774321bdb7d185351f1a9afadb140fbe827a5e3b8cc1c6ccf3eb2f898",
+      "hunk_sha256": [
+        "2b0691f25ad203aef9e8c47e94a34c121a017152053067ddd102c4b5e9498022",
+        "017ed43de79b9d25dc0e081ac0a2893ca5a44cedc2cdd25ab6899f287a0f52fd"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "2b0691f25ad203aef9e8c47e94a34c121a017152053067ddd102c4b5e9498022"
+      ],
+      "rationale": "Passthru vdev/BSS peer association and lifecycle adaptation used by the Wonder vendor handle."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/BUILD.bazel",
+      "canonical_diff_sha256": "c888d5391091d41f2f10434d9c68c8eb206956ada70d552cfa8affdec0fea8d6",
+      "hunk_sha256": [
+        "db1f4567e42494ceb11dc26120e43deee7992950e0cdd95b2a610cbdef29dbf1"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Wonder/passthru object/header selection for the public driver build. Kbuild/Bazel parity remains independently checked."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/Kbuild",
+      "canonical_diff_sha256": "10fc55a88d55b3abc901f6018b2a25cb360920d9000f461ad7cbdbe3f579065d",
+      "hunk_sha256": [
+        "e95dc93a8b9ceac46eb0a6c6e7a33b143c6d3e5d8af16f63581c195bc9030ed8",
+        "21b8f3601805884a60ed5dfa9c148c655fce1ce8568d8d46f40676c8ae29dc22"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Wonder/passthru object/header selection for the public driver build. Kbuild/Bazel parity remains independently checked."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/inc/wlan_policy_mgr_api.h",
+      "canonical_diff_sha256": "7fc5663c946375c5d7f11dca463bd7c69cddcd3f79e359d7ffb17641a765800f",
+      "hunk_sha256": [
+        "ef41994f62e68c6ed9842250914228dd0d4d808292168b20b0000758df3e6c8d",
+        "7584f048f23eb1897422eb3d3a2a85da389908f6d23f5f31364e98f18c4d7d9c"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/inc/wlan_policy_mgr_public_struct.h",
+      "canonical_diff_sha256": "221706b37b09dbed55d4dec320b1dbb1b696642539cd50f7f16f5fad44b28f90",
+      "hunk_sha256": [
+        "2072cc47d2c3b72c8c14d3c86d6674c742a269d955d5626561e4ea2d08445f2d",
+        "e0fe1abea041ab2d989f7eb47e408c8263865a7567cfcb19e2bce31dc0a6be6f",
+        "16dbf628497df39157c6995f4b69e87de2ac6a751ac07bacbae459ec2dabef7a",
+        "7c3c60492e0807b597fbd517c547934521338aa38cf39baad0d7642321e81107"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_pcl.c",
+      "canonical_diff_sha256": "1c159c360f0abf5b700404bfc1bd09518f96e4650f6f4e31a1ef3b90ff29e922",
+      "hunk_sha256": [
+        "7b5f2469ca306d04e609c64b6565f1aaef75cb234ef2c92bdccf3758ac6e4cdd",
+        "bb264ba425c34c540eed09042920f42c3e37ad708e3419b0f2d0146b53e508a3"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_tables_1x1_dbs_i.h",
+      "canonical_diff_sha256": "9e70958f1a6c17bde32b2ad49a4d4cb916c95ee3a3abb855a5edfeb70789758e",
+      "hunk_sha256": [
+        "9a9481469595c6a2806700af6c579864339a9a3524e86553c68e51cfdca0b2d9",
+        "d7c7befa3b15ee4c7aef2c9e3d238ad6667fada81967148130a94e7efff29862",
+        "2d037814cd3ccdedf4f7e29c7fbb66bb9768ff3a29c5e9c4cd746d91fb6d44b4",
+        "83bf6cff73f84dc2e9a93815ba7a80befd22af4c6ee357cf3e333756c3094afc",
+        "074261ae54e707c642d466614df277e653ec802c5a344e936b029590117ae04e",
+        "3dfabf9c4c40764713be17f14a941a0b214598a4e2301ecd68290d17d75b59a4",
+        "2da783f669508a818eb0f8420d0a066e62038f296099084f67b27750c5909151",
+        "a994a4942dc6b105fc36d7e7363613dcaf6ba7670149b91abe989f87b6daefcd",
+        "420fe40b8c70f63ff5debb08c95f85a517bdc53cbfe74748ac6bc7d616065908",
+        "89ea6efea98981703622ed7ec0dea0adde5cfd6e009d31547824084f28c22c8b",
+        "fca004c3c5d8dea0a838f155604f46d8e84ac73486533735d68dd3f93efe48ab",
+        "cfab1266f762a1ffebe7ac6c7c2814b5ef0df09368b9714e9fdb2c93259f9b33",
+        "160cc089ef4c7de50c8538b726e1a8ea1608c27c1e969e16f256db4e6fabfaf8",
+        "50eb5a320ed85c795806621840776ca99a11a9229ff77fe603cd76ad60cb0f7b",
+        "abd0fefd2cac179127e83295a4231b13046300071c43ab2e91cbe001cece82af",
+        "651768b0a6963b1929bc95256e3b7cc3d2939f352488a36568d98ce00f03eaff",
+        "b543f34b7467ac2a345522ea36634c0e1448476de7fad89e0ebfef5c996b706f",
+        "a9f4522b738f3b6757d73299ad9e47d60d76638942af3cea070fae86bbe707df",
+        "566b8a9e176ed3792bc0b6237289e0d48f69c20067d9704e471838967190efcd",
+        "350a93e86c0273d7e868d608c7c3093dffcafa707a02f94a2964caca341ec788",
+        "72db1faac43c859db9b9fc2dcf0caeedd0ac2a8be9db2f4e946ed61dd3967062",
+        "55d5e7ea71951987ad1f20a6ee759490e99f87c0d35e220bc2b551cbee02562a",
+        "1b5f60df9265c36ca9e8cfe81c550335da1b129596db9a5cf72cc05fa0dee4c7",
+        "b106c46127f45ab66ecac29bf440a892052a6483798c1fd3a766e4ab4838f0dc",
+        "c1be34cb4c44f89f4437bcb4dfe1443e4bc87529a36d4e96ceacf42ca5233074",
+        "6529bcec09e39d6dde74e73df228507674dc940ffb74bc8725932127bf54bb07",
+        "dc686bf21fb80175ee288a67b3f57b5b55fed882b675a2fff31492c4041c981f",
+        "5fda96aac2d99b98c534cabfcd0c1be5689af0bb17d6ab59ced042f0bf4235aa",
+        "7c507103d086972986561081a0a19c0d6b941b065a86e7f495c583e521e58871",
+        "25bc3a4758555d7601af4badda924b3e58d5134e0a2cca435a30a5060d040857",
+        "0c3c4e00a4b08dbd7e5dfc5753649468d6957e7fb95e270c63a3bdf4b2e49248",
+        "0ce7cac9c2e26db8a17cbd351d2a6754c167fc2f0f74428889cf953e691984d9",
+        "8f0643123fb98e0cb2582ead4fa853a8c329244d3cefd2d0cea5f2d8fbe3b85e",
+        "3613730783f896a5c95e8cf98e257ea0ac76d06952e93c50015d3c2a1fb37551",
+        "94d2207dc59b77461d2aec1393136654ab8d8e137135a0a96939853f6278904d",
+        "d814683ddebd0dfacb389d2ae53eda0ac40a036329c9cfc21f0cb4ed1888307c",
+        "3d3892345a6f681a0db2781710ad610f9191651bb089941c96e916a0dad4932b",
+        "662d716e70a899d4e81acec81d668005f59378c212fa0cc2e8fe97cc6dd664c6",
+        "eae4aa962a27801f99dc773a99a45918753c32800b28e1df6b3cf0d5472cc644",
+        "eb321c78dcfd19709c5a042679c882f22d0c8a9a85825e4406f7fdead20580c9",
+        "1073158929236ebcc20375739dd97c25afb3167cbf980ccd92dcf824bd1e2be6",
+        "61ce8f9cee66be3dd76c045ede3cebeafe7c73a1efacd9ac3c05589fb1b8cee1",
+        "503446da628f9a19d0a9e348d5c3e02726d4b332f854b867eaaf6bc1d48194a3",
+        "bab921a6786278d99dc16cfb245ea32f9937dc131866421ead0cebf348a3c611",
+        "4ff8a118c75e90bcd075335056f12413ae80bac6377feddc630eb8d8838d674a",
+        "71fc697fdf16b9e38f147100fa13fc778b51427611a0bd97378b9ad25f66f576",
+        "afce74cfe7ec5ba1c38e56f3087d553e0ccb83ef577b6a9745fc1edb332b4187",
+        "c9d8859acb5e34870e7f6080cb53efa041ff97e68ade21335caaae216301c3d6",
+        "aefce9db85b430d21cd004a3815af47bdc767f03acdba35b96f57b8d058928c4",
+        "9d6bd120792eefab698a5e8ec292a82a621cb618b4a7168120ebd01cb4ba5562",
+        "2d05b337c2bd94c1d6295fad13cedfd8d09ef88eb5eacc5e72674db7991770e0",
+        "bf876a25f244344dc8083becc7a6aba923ed566be87e22424065035922164260",
+        "4e5ee740f6be5ec81c839a41fe66f148155a37626ace6a029f72f133d881f4bf",
+        "f22887590a19a807ef7b6dd40bd8b2cb6931d32fe291f7c23e394183a85760a9",
+        "18a2c6464f96725d99abc0e96c924e9971be3f9089e5713a455156bc1a38719c",
+        "9eaa516df3f560824420897a2999a8e08791459ebc4ae050ff826e5b446e3f3c",
+        "65f25b677c0840d5c85f091028e54b4be33b1c012a01ea611678c6f6f86b1398",
+        "73ca4d9a8ba7e582bdbcfaf65fd296b07f3a1e6e3bb3ac92ed15aef6e06eb02e",
+        "a5bc5001b33cefbee203fac977e6b974e429d91e19652d20631c0f2dc6b3bdbd",
+        "83941ead5fcdc16de64ab80263f499b36ba828aa197ef0b3eb7236799739f26e",
+        "fa4a51d2d25fa4902dc873e603f25135d00dfc19a799a78e019bfe84dd5979e8",
+        "d5934ed955d3f063176ca57d92541ac91d09ae7275faedd9bb82e9a3cdd4b27e",
+        "a489ad62017130645f6ea24a92faa9e11ef9aa5e6e4a230ac7f44fe8f5cbf6d2",
+        "b77c9da0f8373ce4ea40bc418a83098a133d41b72c6b8f9ef1e0e14916a51152",
+        "c9ab00cc295e42a37c25d8d9e93c576edb550c59683723d9e695386c67277aa0",
+        "deed20d845158721ae9008540054dc95f2f2fe2c0b816ab0b768d8456ed28515",
+        "a8ec2d04202eb75e6c9ce2c9c0170f2d2291005b622425ac7cc068934c95c47e",
+        "5da83152ed1f95af1be4e46124633496cf58bfbdeae893fc8e77f7562464bc93",
+        "88fa5fc9b238404fe1d149d105d49de7d109c9ab971c390d12d01bc2f975e6f5",
+        "0022c53d7b208cd9d5e2d9ac497b9c531fb9a7b26404e66b7f25220dd3ec8f79",
+        "52c5ec20eeeadf95359d5a3e1a1ae8a5bbd61263cd0b80aaba7af7e3d7ca3fe5",
+        "0dfc7bd56aa8d5d49f50249cef1d6237f0a09ff78455d1054422f38a23776d48",
+        "e217fe4961299fd1f5c4fe8a527a1d223fbeb482febbce307b53d97f53271d25",
+        "d3fc6b4ecd146106433feabdf486b8826aef1bbde5db614568ee5188f4dcc157",
+        "1747402bb5ee9188c5956fc8e492fcab17aa2e318d788d874d6a73aae5066678",
+        "b9da0775d2c4372b7aa581e234f3829886573b2c203fe79b6834bfdefc1511ba",
+        "b5dfd1b333ae7b12fc9040e0a43a1a8bd051887c3e75b71e1d7d4afe4b66c972",
+        "c61e65467ca26db18313321bc5afd3847e7a27168ad522b1bd3b718074404635",
+        "2cff81bc8e91c660992b33b2c2cb57f109b7eb61b4a7601582db8b0ccc26e3e5",
+        "5cf7914d05fe34922cf8447a56452dbcbda41e95f2a0cd1e0411dfd3785290a8",
+        "da6ea831320a1c8d8ec90045c10c493721e1ee16c96f545be0610856dc55271d",
+        "19002ba5a32e1ac625dc4485f8bb7f101890788747dff93b1755363fb43da1fe",
+        "dcc536f210bc73bd1d5f04b7deb862ab2d3e9d71fa9bb4beb9b7e42efb593e1c",
+        "f7f453f09e784ddf3460f15dd2a22f2f0244c964627342e6a2e6ed78557b1aee",
+        "9884784999ada9a18c9cc6504cb00b0cabc6edde89fb088fbc10a8f524711ce7",
+        "e1890612c7077525482526206fc8045b8939bbc14a333c414e3a58d897b8899c",
+        "2e37e68bb79fb1a88c9bf4bf0eb47695f7b1f4ff8ac2d10f8a64cc0099d08c9d",
+        "53a6343b31d8b5581927612172f0a96f401b10ee408b4496deacc1d2bc7e9a30",
+        "9463c5ce5c2b8e99c3ee28ab96e3d8e327d88e726e41ba92bc9b7283bbb776db",
+        "8ff12c869238e15ddd2a67cc6da0eb46332857812dc4ad4dac2fb6f772edd172",
+        "8df6c1ee44cd07113a808c7dbd5b75f242e0cc6b17b0e975dc497cc9928e7827",
+        "d1711d3ade3cf37a19ed7e02cdf2c773aeb73e07446e235779a77d33c1e43949",
+        "c590cd8d6b5a1d8739b182356e1bdaffcb6aa80e02069570ba43d610982abf10",
+        "110c090bddc1344cc2445d3130ed987715e35bd8c3202ff95e9538d0c2deb64f",
+        "36a4b43956860df4929023dc763da3705da65b4244be68e91d4411567992e253",
+        "1a0829280c0e99a5732c0328343f3710d4f5e38727b36c454e69668964867ca1",
+        "29f19029f3fc39ac415e68d3c3d55d7951b184d50e62abdafb8ce9cfb4e9c675",
+        "995acfc6070e17f5b4d4b825ded76f3fd2a1920b46f0eabff33becd25295f52e",
+        "392670165eac5fcd79f97bb64dba59512733f68ab1675bb600ff4650a0654130",
+        "dd416425d3158f6dc5604c4f01b34c0e3180b2eaeaee9b364a8f18736a5b02fa",
+        "146d7ae3592a9f080c2534f33a7f2749eaf8bf2c67ea51960aede25a254df0fb",
+        "dbde496da362a60fef657db64e5855abad03f5bdd6d49d4093949ae670182acd",
+        "7bf7d90707f9aaaf9b979d7a5d9efb464d57738b20ffa99de4a2b29bed2ded23",
+        "698001591f38a3ee5f3cb4e3082cc5f0473883a4f9359fc55a433a906118fa17",
+        "abdb98b47ea999b9efcf479fc2f463cfec88dc7dfd84308f8555f19493b631b0",
+        "07065e9a1622fd6d5bedfff4ae91e0a9d0d35c768257bd12a5b58072a82e5007",
+        "a689113622280754e3a0afa38a5f1aec19096cdacbc8d912fb24f91b2c244419",
+        "a39593f930af5eff6932e0a92809d1d5d62ab7f7ed130aa523e94d6405c30d15",
+        "c012290398792d1f658fcf03477da37f0596fbd0281cec6a92315cb060668169",
+        "dfe86fb6c917a985c48532e7872fabfb044141db2cc50d42d33232a862cd34df",
+        "757b18540e6feb0c27b2f86d86148baa6294f6d21fdacf06a5a95eb6255d585f",
+        "1e6465f0c3994a6b39e0ad6a69d0dd0ac7077dbd8e0d2a1a93ab7ed6352505ef"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "9a9481469595c6a2806700af6c579864339a9a3524e86553c68e51cfdca0b2d9"
+      ],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_tables_2x2_2g_1x1_5g.h",
+      "canonical_diff_sha256": "448466ec02ded3fdda110408e951a5773b71e0d5ccaeb40aba5d34521510dfa9",
+      "hunk_sha256": [
+        "60032716e248f70d622be78d8d1610108c8d5b1532ff0b370cdbff90ee7c2aff",
+        "31037f28de3b9ddfd4d89cf16d41e8b5720045dea18f8c095b2db50b95264061"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "60032716e248f70d622be78d8d1610108c8d5b1532ff0b370cdbff90ee7c2aff"
+      ],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/cmn_services/policy_mgr/src/wlan_policy_mgr_tables_2x2_5g_1x1_2g.h",
+      "canonical_diff_sha256": "5f163efe2d3c58dca4f2e91c620acd3f798d67f34e3c6012464e7b53adb57325",
+      "hunk_sha256": [
+        "60032716e248f70d622be78d8d1610108c8d5b1532ff0b370cdbff90ee7c2aff",
+        "e7e81a97251bb21d154106c22f4a6dac3e7ee2be2334dcf4f1984f2daa0fea7d"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "60032716e248f70d622be78d8d1610108c8d5b1532ff0b370cdbff90ee7c2aff"
+      ],
+      "rationale": "Passthru policy mode/connection enum indexing, PCL entries and concurrency dispatch must remain consistent; repeated table initializers are not removable cosmetics."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/dp/core/inc/wlan_dp_txrx.h",
+      "canonical_diff_sha256": "ac7ee5fbf4b82fa28682bd1207b85c8dc168d456cb3a8247fcd3a5b9917a593c",
+      "hunk_sha256": [
+        "ff7e2b4505a59b5326360cca4874112afa5b4f1831c83a4572caa04d9bce2ccd"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/dp/core/src/wlan_dp_bus_bandwidth.c",
+      "canonical_diff_sha256": "b81e365f55eb7d4d470eb0aac6879abb680638441984035ab192f35fe9013513",
+      "hunk_sha256": [
+        "80b7061bd85e771d1febf654d5b2c8198c750d6cf398b394ea6d5773f7c93c5a"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/dp/core/src/wlan_dp_txrx.c",
+      "canonical_diff_sha256": "f10582fea34056c7312efde04d2c806822508b55e4d0e7bb2f2e6fed0620d3fb",
+      "hunk_sha256": [
+        "e13d36573ac9b44229100879b7b175c3ae613d9b08e500e73841c70e1c37e68a",
+        "0934b311f62f38df41f342d75cb93bad02654f0f204ff137f1c396208a0754f7"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/dp/dispatcher/inc/wlan_dp_ucfg_api.h",
+      "canonical_diff_sha256": "d31c5c74d91313a9e6503415d979ed5d9b825934e6c2c190702adcc16ed5af91",
+      "hunk_sha256": [
+        "352294b2c0a138299493c6ff844e33fa1e94b268beb2cb8ab34b30c49bea944b"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/dp/dispatcher/src/wlan_dp_ucfg_api.c",
+      "canonical_diff_sha256": "0861c4741c568b659eebdead1b293fbf624a68c7cfd37bee5f1989b0b9558855",
+      "hunk_sha256": [
+        "aecef24d2cd605d7647779ff7d7e25cd9c1bfb207f61f5fdfbb0497c3a430172",
+        "2f1c9d57501cae69f3eb5e01ea31364d2af0df0f39dbcbf976620fc5ba264b2d"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru raw RX/TX bridge or shared scatter-gather/padding helper callsite closure; all callsites must agree on the extended signature."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/components/umac/mlme/connection_mgr/dispatcher/inc/wlan_cm_roam_public_struct.h",
+      "canonical_diff_sha256": "ec41151b8465f31559717ac867ab0249cd415c237e01a5bffb4c594eebee52ea",
+      "hunk_sha256": [
+        "9e5b237c5df6e20116c574afede5f2a3a37d190a707ca2f9dc88378e3d51d62d",
+        "c5200018b590b08fe628c5192416dba5851a1a3738c509c9db821b3535f7f348"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru command bookkeeping fields required by the imported MLME/session bridge."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/inc/wlan_hdd_tx_rx.h",
+      "canonical_diff_sha256": "c33cb34b71938f14a2af8bb8fca0ee53b15f443680dce5eeb651d47ddf766647",
+      "hunk_sha256": [
+        "b790656c953f0e189df85800fa0f2903242cbb757e2bf653f6b15f7f19ff71ed"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_driver_ops.c",
+      "canonical_diff_sha256": "3eb4f2b2c5677928de66d089f8643cd197814a239e00a44c0775e0bd6a97536e",
+      "hunk_sha256": [
+        "2be72897b4de4f954999eac53662cc6957fbe73ddee4345b2eb6918adf078dd9",
+        "d1d94e0856a991cf9d2dd29c40619bceac422931dbf0cf580c53f7ae0ad1205a",
+        "2cff53a7ca081c2568015f7fc2c0d8782fdc6a50ff1a01d58b68866f4929fccf",
+        "c3325f72d9a9a2a13d0dda63d070db630326c074ec435c889f8f146d3bcff8cc"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_p2p.c",
+      "canonical_diff_sha256": "2a4d006bcce79555361535f26ded586bada5a183fcfddf5fda4267934c1455f9",
+      "hunk_sha256": [
+        "1e892de0915cb0529326f50fa64e647382b0be1b4c3ddd47f733cba943088250"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_packet_filter.c",
+      "canonical_diff_sha256": "3b1e09aac5473035bb9c57fb109f4db5da028e60570b3d96976d57acf28a8d47",
+      "hunk_sha256": [
+        "f508ad8a6a91ae7f40aac875756166e151608f90e0965a5d0f06673e93be9d66",
+        "efc3d2a804472802de0ebf077326350e67d415d871392e982fb4ae1602d0dcfb"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [
+        "f508ad8a6a91ae7f40aac875756166e151608f90e0965a5d0f06673e93be9d66"
+      ],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_scan.c",
+      "canonical_diff_sha256": "b6b27b2b9abf69811225e8976524e4b87122135852b719d064977780e129375d",
+      "hunk_sha256": [
+        "906684ff5f986d7d2cde28e3f66dffff24feb55dffabaa339bfe81c4bcd375b6"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/qcacld-3.0/core/hdd/src/wlan_hdd_tx_rx.c",
+      "canonical_diff_sha256": "8d0d5b4316ebe55ba4703dd0fca5ad05c93bc8c3f4535b6c515061cf242b8b9f",
+      "hunk_sha256": [
+        "afed56d25982f9dbbe6eaeedbd80f8341ad2757b20b79ff22c8a58f359d549fb",
+        "2ae0cbc01c1ce1f5e4b696d5d6cdd54c58e892ea3de5ed7bc56a040ec6c7c3f5"
+      ],
+      "action": "keep",
+      "drop_copyright_hunks": [],
+      "rationale": "Passthru HDD TX/RX entrypoints or mode-aware guards for ordinary HDD control paths. Preserve normal non-passthru behavior."
+    },
+    {
+      "path": "vendor/qcom/opensource/wlan/wlan-devicetree/canoe-peach-cnss.dtsi",
+      "canonical_diff_sha256": "df694b170f330b8e3d1c2d94f688a6ebdd0464f27ad2e37a0de826942220d150",
+      "hunk_sha256": [
+        "eea0cec2f335f89d80a490a17d888efd739cc1a9fcbdb7f3721411e33a082af4"
+      ],
+      "action": "drop",
+      "drop_copyright_hunks": [],
+      "rationale": "Donor-board DT nodes are not a 13T runtime binding plan and are not built by this smoke. Do not transplant donor DT."
+    }
+  ]
+}
