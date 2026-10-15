@@ -56,6 +56,7 @@ VENDOR_KERNEL_CONFIG_DEFINES = ['CONFIG_IPA3=1', 'CONFIG_ARM_SMMU=1',
 # CONFIG_WLAN_TX_MON_2_0 variable directly. Derive the latter only after
 # proving the exact pinned profile enables the corresponding composite keys.
 PROFILE_REQUIRED = {
+ 'CONFIG_QCA_WIFI_FTM': 'y',
  'CONFIG_WIFI_MONITOR_SUPPORT': 'y',
  'CONFIG_WIFI_MONITOR_SUPPORT_Y_WLAN_TX_MON_2_0': 'y',
  'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE': 'y',
@@ -67,6 +68,8 @@ PROFILE_KBUILD_DERIVED = [
  'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE=y',
  # Captured vendor cfg80211 callback layout and zero-export qcacld policy.
  'CONFIG_NL80211_TESTMODE=y',
+ # Kbuild tests the non-CONFIG make variable for the Bazel-selected FTM object.
+ 'QCA_WIFI_FTM_NL80211=y',
  'CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y',
 ]
 
@@ -101,6 +104,12 @@ def profile_kbuild_compat(work: Path) -> dict:
     kbuild=work/'Kbuild'; text=kbuild.read_text(errors='strict')
     if 'ccflags-$(CONFIG_WLAN_DISABLE_EXPORT_SYMBOL) += -DWLAN_DISABLE_EXPORT_SYMBOL' not in text:
         raise ValueError('QDF no-export Kbuild contract drifted')
+    ftm='cmn/os_if/linux/ftm/src/wlan_cfg80211_ftm.c'
+    if (not (work/ftm).is_file() or '"'+ftm+'"' not in bzl_text or
+            '"CONFIG_QCA_WIFI_FTM_NL80211"' not in bzl_text or
+            'ifeq ($(QCA_WIFI_FTM_NL80211), y)' not in text or
+            'FTM_OBJS += $(OS_IF_FTM_SRC)/wlan_cfg80211_ftm.o' not in text):
+        raise ValueError('Pinned NL80211 FTM Bazel/Kbuild source contract drifted')
     obj='$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'
     hdd_anchor='$(call add-wlan-objs,hdd,$(HDD_OBJS))'
     if obj not in text:

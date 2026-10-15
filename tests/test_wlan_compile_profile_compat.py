@@ -17,13 +17,18 @@ class QcacldProfileCompatTests(unittest.TestCase):
         (root/'wlan_qcacld3_modules.bzl').write_text(
             '#ifdef OPLUS_FEATURE_WIFI_BEAM_SWITCH\n'
             '    "core/hdd/src/wlan_hdd_beam_switch.c",\n'
-            '#endif /* OPLUS_FEATURE_WIFI_BEAM_SWITCH */\n',encoding='utf-8')
+            '#endif /* OPLUS_FEATURE_WIFI_BEAM_SWITCH */\n'
+            '"CONFIG_QCA_WIFI_FTM_NL80211": ["cmn/os_if/linux/ftm/src/wlan_cfg80211_ftm.c"]\n',encoding='utf-8')
+        ftm=root/'cmn/os_if/linux/ftm/src/wlan_cfg80211_ftm.c'
+        ftm.parent.mkdir(parents=True);ftm.write_text('/* fixture */\n')
         export=root/'cmn/qdf/linux/src/i_qdf_module.h'
         export.parent.mkdir(parents=True)
         export.write_text('#ifdef WLAN_DISABLE_EXPORT_SYMBOL\n#define __qdf_export_symbol(_sym)\n#endif\n')
         (root/'Kbuild').write_text('HDD_OBJS := core/hdd/src/base.o\n'
                                    '$(call add-wlan-objs,hdd,$(HDD_OBJS))\n'
-                                   'ccflags-$(CONFIG_WLAN_DISABLE_EXPORT_SYMBOL) += -DWLAN_DISABLE_EXPORT_SYMBOL\n',encoding='utf-8')
+                                   'ccflags-$(CONFIG_WLAN_DISABLE_EXPORT_SYMBOL) += -DWLAN_DISABLE_EXPORT_SYMBOL\n'
+                                   'ifeq ($(QCA_WIFI_FTM_NL80211), y)\n'
+                                   'FTM_OBJS += $(OS_IF_FTM_SRC)/wlan_cfg80211_ftm.o\nendif\n',encoding='utf-8')
 
     def test_derives_monitor2_and_adds_bazel_only_beam_object_once(self):
         with tempfile.TemporaryDirectory() as td:
@@ -34,6 +39,7 @@ class QcacldProfileCompatTests(unittest.TestCase):
                 'CONFIG_WLAN_TX_MON_2_0=y',
                 'CONFIG_WLAN_DP_LOCAL_PKT_CAPTURE=y',
                 'CONFIG_NL80211_TESTMODE=y',
+                'QCA_WIFI_FTM_NL80211=y',
                 'CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y'])
             text=(root/'Kbuild').read_text(encoding='utf-8')
             self.assertEqual(text.count('$(HDD_SRC_DIR)/wlan_hdd_beam_switch.o'),1)
@@ -74,6 +80,12 @@ class QcacldProfileCompatTests(unittest.TestCase):
         self.assertIn('CONFIG_NL80211_TESTMODE=1',VENDOR_KERNEL_CONFIG_DEFINES)
         self.assertIn('CONFIG_NL80211_TESTMODE=y',PROFILE_KBUILD_DERIVED)
         self.assertIn('CONFIG_WLAN_DISABLE_EXPORT_SYMBOL=y',PROFILE_KBUILD_DERIVED)
+
+    def test_ftm_object_selection_drift_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);self.fixture(root)
+            p=root/'Kbuild';p.write_text(p.read_text().replace('ifeq ($(QCA_WIFI_FTM_NL80211), y)','ifeq ($(WRONG), y)'))
+            with self.assertRaises(ValueError):profile_kbuild_compat(root)
 
 if __name__=='__main__':
     unittest.main()
