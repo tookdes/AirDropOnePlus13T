@@ -20,7 +20,7 @@ INTRO_PARENT = '7fb7abf097a18c6e2ad2fb9d18876b095898e87f'
 PREFIX = 'vendor/qcom/opensource/wlan/'
 EXPECTED_PATH_COUNT = 44
 EXPECTED_PATHS_SHA256 = 'c8423910558b44d6ccaeb23587e18a296720be7e7a21befe50e220928aafd634'
-FRONTIER_PROFILE_SHA256 = 'e42df5edc5308534ef706e1b256636f36827fe5bf365e3f8c253fa454b52afe6'
+FRONTIER_PROFILE_SHA256 = 'f4dc5731f7dd0f411bfebbc9e1aadebcca6ab25beacba9ce188bb8c089268a70'
 
 def cmd(*args: str, cwd: Path | None = None, check=True) -> bytes:
     cp = subprocess.run(args, cwd=cwd, stdout=subprocess.PIPE,

@@ -19,7 +19,17 @@ def sha(data: bytes) -> str:
 def canonical(diff: bytes) -> bytes:
     # Git abbreviates object IDs differently in shallow/complete repositories.
     # Hunk contents, paths, modes and context remain byte-pinned.
-    return b''.join(line for line in diff.splitlines(keepends=True) if not line.startswith(b'index '))
+    result=[]
+    for line in diff.splitlines(keepends=True):
+        if line.startswith(b'index '):continue
+        if line.startswith(b'@@ '):
+            # GitHub's C parser and local Git label the same hunk differently.
+            # Labels are presentation only. Preserve ranges and ALL code/context.
+            match=re.fullmatch(br'(@@ -[0-9]+(?:,[0-9]+)? \+[0-9]+(?:,[0-9]+)? @@)[^\n]*\n',line)
+            if not match:raise ValueError('Malformed unified hunk header')
+            line=match[1]+b'\n'
+        result.append(line)
+    return b''.join(result)
 
 
 def hunks(diff: bytes) -> tuple[bytes, list[bytes]]:
@@ -40,17 +50,17 @@ def select_patch(path: str, diff: bytes, entry: dict) -> bytes:
     if entry['path'] != path or sha(canonical(diff)) != entry['canonical_diff_sha256']:
         raise ValueError('Pinned donor diff drift: '+path)
     preamble, blocks = hunks(diff)
-    if [sha(h) for h in blocks] != entry['hunk_sha256']:
+    if [sha(canonical(h)) for h in blocks] != entry['hunk_sha256']:
         raise ValueError('Pinned donor hunk drift: '+path)
     if entry['action'] not in ('keep', 'drop') or not entry.get('rationale'):
         raise ValueError('Missing explicit frontier decision')
     if entry['action'] == 'drop':
         return b''
     drops = set(entry.get('drop_copyright_hunks', []))
-    known = {sha(h) for h in blocks}
-    if not drops <= known or any(sha(h) in drops and not copyright_only(h) for h in blocks):
+    known = {sha(canonical(h)) for h in blocks}
+    if not drops <= known or any(sha(canonical(h)) in drops and not copyright_only(h) for h in blocks):
         raise ValueError('Only standalone copyright-only hunks may be pruned within a kept file')
-    selected = [h for h in blocks if sha(h) not in drops]
+    selected = [h for h in blocks if sha(canonical(h)) not in drops]
     return canonical(preamble)+b''.join(selected) if selected else b''
 
 

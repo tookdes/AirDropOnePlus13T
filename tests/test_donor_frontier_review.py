@@ -18,8 +18,8 @@ PATCH=b'diff --git a/vendor/file.c b/vendor/file.c\nindex 1111111..2222222 10064
 def fixture():
     _,blocks=hunks(PATCH)
     e={'path':PATH,'canonical_diff_sha256':sha(canonical(PATCH)),
-       'hunk_sha256':[sha(h) for h in blocks],'action':'keep',
-       'drop_copyright_hunks':[sha(blocks[0])],'rationale':'fixture'}
+       'hunk_sha256':[sha(canonical(h)) for h in blocks],'action':'keep',
+       'drop_copyright_hunks':[sha(canonical(blocks[0]))],'rationale':'fixture'}
     return {'schema':1,'release_ready':False,'expected_retained_path_count':1,'paths':[e]}
 
 
@@ -33,6 +33,11 @@ class FrontierTests(unittest.TestCase):
     def test_index_abbreviation_is_not_hunk_drift(self):
         changed=PATCH.replace(b'1111111..2222222',b'111111111..222222222')
         self.assertEqual(minimize([(PATH,PATCH)],fixture()),minimize([(PATH,changed)],fixture()))
+
+    def test_cosmetic_hunk_function_label_is_not_source_drift(self):
+        labeled=PATCH.replace(b'@@ -10,3 +10,3 @@\n',b'@@ -10,3 +10,3 @@ function_name(void)\n')
+        a,_=minimize([(PATH,PATCH)],fixture());b,_=minimize([(PATH,labeled)],fixture())
+        self.assertEqual(canonical(a[0][1]),canonical(b[0][1]))
 
     def test_functional_hunk_cannot_be_pruned_as_copyright(self):
         p=fixture();p['paths'][0]['drop_copyright_hunks']=[p['paths'][0]['hunk_sha256'][1]]
