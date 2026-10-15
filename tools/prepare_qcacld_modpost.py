@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare fail-closed qcacld modpost provider tables from checked evidence."""
 from __future__ import annotations
-import argparse, json
+import argparse, json, re
 from pathlib import Path
 from prepare_stage_a import run
 from build_stage_a import TARGET_RELEASE
@@ -13,7 +13,9 @@ def read_symvers(path:Path)->dict[str,list[str]]:
     result={}
     for no,line in enumerate(path.read_text(encoding='utf-8').splitlines(),1):
         f=line.split('\t')
-        if len(f)!=5 or f[1] in result or not f[1]:
+        if (len(f)!=5 or f[1] in result or not f[1] or
+                not re.fullmatch(r'0x[0-9a-f]{8}',f[0]) or not f[2] or
+                f[3] not in ('EXPORT_SYMBOL','EXPORT_SYMBOL_GPL') or f[4]):
             raise ValueError(f'Invalid/duplicate symvers row {path}:{no}')
         int(f[0],16); result[f[1]]=f
     return result
@@ -41,7 +43,16 @@ def prepare(kernel:Path,kout:Path,compiler:Path,shim:Path,out:Path)->dict:
           'LLVM='+str(compiler)+'/', 'LLVM_IAS=1',
           'KERNELRELEASE='+TARGET_RELEASE,'-j2']
     core_path,core_report=prepare_kernel(kernel,kout,make,out)
-    core_rows=list(read_symvers(core_path).values())
+    if core_report.get('fresh_kernel_crc_gate_passed') is not True:
+        raise ValueError('Fresh candidate kernel CRC gate did not pass')
+    checked=out/'qcacld-kernel-checked.symvers'
+    core_rows=list(read_symvers(checked).values())
+    expected_core={'dev_close':'0x3d8d1736','dev_open':'0x2db1f9fe',
+                   'get_random_u32':'0xd36dc10c'}
+    if ({f[1]:f[0] for f in core_rows}!=expected_core or
+            any(f[2:]!=['vmlinux','EXPORT_SYMBOL',''] for f in core_rows)):
+        raise ValueError('Incomplete/unexpected fresh kernel CRC evidence')
+    core_rows=missing_against(core_rows,existing)
 
     exports=module_exports(shim)
     matches=[r for r in exports if r['name']=='cnss_set_vendor_wonder_priv_data']

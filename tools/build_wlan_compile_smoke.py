@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Compile-only qcacld smoke against the pinned 13T GKI environment.
 
-This deliberately permits modpost warnings because dependent vendor Module.symvers
-are not public in this workflow. It does NOT declare the produced module loadable.
-Compilation, relocatable link, Wonder object selection and candidate-only undefined
-imports are the only gates here.
+Strict mode requires checked providers and fails on either compilation or
+provider-closure failure. Diagnostic mode may emit unresolved-symbol warnings.
+Neither mode establishes runtime loadability, firmware compatibility, or RF.
 """
 from __future__ import annotations
 import argparse, json, os, re, shutil, subprocess
@@ -195,6 +194,12 @@ def build(label:str, kernel:Path, kout:Path, compiler:Path, root:Path,
       'release_ready':False,'loadable_proven':False,
     }
 
+def exit_status(report: dict, strict_modpost: bool) -> int:
+    """A standalone strict invocation must enforce the provider gate too."""
+    return 0 if (report['compile_gate_passed'] and
+                 (not strict_modpost or report['modpost_provider_gate_passed'])) else 1
+
+
 def main()->int:
     ap=argparse.ArgumentParser()
     ap.add_argument('--kernel',type=Path,required=True)
@@ -219,7 +224,7 @@ def main()->int:
     expected_new=['cnss_set_vendor_wonder_priv_data','dev_close','dev_open','get_random_u32']
     compile_ok=b['make_rc']==0 and c['make_rc']==0 and b['relocatable_object'] and c['relocatable_object'] and \
          c['wonder_object_selected'] and c['wonder_macro_enabled'] and c['wonder_kcfi_enabled']
-    provider_ok=a.strict_modpost and b['modpost_provider_gate_passed'] and c['modpost_provider_gate_passed'] and \
+    provider_ok=compile_ok and a.strict_modpost and b['modpost_provider_gate_passed'] and c['modpost_provider_gate_passed'] and \
          candidate_only==expected_new and not baseline_only
     report={'baseline':b,'candidate':c,
       'candidate_only_undefined':candidate_only,
@@ -232,5 +237,5 @@ def main()->int:
               if provider_ok else 'Provider closure is not yet a loadability claim.')}
     (a.out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
-    return 0 if report['compile_gate_passed'] else 1
+    return exit_status(report,a.strict_modpost)
 if __name__=='__main__': raise SystemExit(main())

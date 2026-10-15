@@ -1,0 +1,2 @@
+# Byte-hashed derived evidence must have the same bytes on Windows and CI.
+profiles/stock-qcacld-peach-v2.provider-evidence.json text eol=lf

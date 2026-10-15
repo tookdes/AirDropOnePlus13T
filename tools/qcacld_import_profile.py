@@ -63,6 +63,32 @@ def load_profile()->tuple[dict,bytes,list[list[str]]]:
         raise ValueError('Unexpected stock module_layout CRC/profile')
     if meta['captured_provider_export_records']+meta['source_verified_provider_records']!=len(rows):
         raise ValueError('qcacld evidence accounting does not sum to import count')
+    evidence_path=ROOT/'profiles'/meta['additional_provider_evidence_file']
+    if evidence_path.name!='stock-qcacld-peach-v2.provider-evidence.json':
+        raise ValueError('Unexpected provider evidence filename')
+    evidence_raw=evidence_path.read_bytes()
+    if sha(evidence_raw)!=meta['additional_provider_evidence_sha256']:
+        raise ValueError('Additional provider evidence checksum mismatch')
+    evidence=json.loads(evidence_raw)
+    if (evidence.get('schema')!=1 or evidence.get('previously_captured_export_records')!=532 or
+            evidence.get('newly_captured_export_records')!=56 or
+            evidence.get('total_captured_export_records')!=588 or
+            meta['captured_provider_export_records']!=588 or meta['source_verified_provider_records']!=0):
+        raise ValueError('Unexpected actual provider evidence accounting')
+    expected={r[2]:set() for r in rows if r[2] not in ('vmlinux','cnss2','cfg80211')}
+    for r in rows:
+        if r[2] in expected: expected[r[2]].add(r[1])
+    found={}
+    for r in evidence['providers']:
+        provider=r['provider']; symbols=r['symbols']
+        if (provider in found or len(r['module_sha256'])!=64 or
+                any(c not in '0123456789abcdef' for c in r['module_sha256']) or
+                r['evidence_kind'] not in ('captured_provider_module_exports','captured_vendor_boot_member_exports') or
+                r['matched_import_count']!=len(symbols) or len(symbols)!=len(set(symbols))):
+            raise ValueError('Malformed additional provider evidence')
+        found[provider]=set(symbols)
+    if found!=expected:
+        raise ValueError('Additional provider evidence symbol/provider mismatch')
     return meta,raw,rows
 
 def main()->int:

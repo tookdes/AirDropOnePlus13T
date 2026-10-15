@@ -75,7 +75,13 @@ See [the RF route assessment](docs/rf-backend-status.md) for the evidence scope,
 
 ## Build infrastructure and testing
 
-Pinned public-source bundles, ten dormant vendor patches, four Wonder smoke patches, regression tests, the provider shim, and CRC/layout tools are included. The qcacld passthru candidate still has hundreds of unresolved imports, including a missing Wonder-only CNSS entrypoint; its module-completion gate stays blocked. Do not insert it.
+Pinned public-source bundles, ten reviewed seed vendor patches, four Wonder smoke patches, regression tests, the provider shim, and CRC/layout tools are included.
+
+Strict qcacld run **38592818084** at `84284b8` passed compilation and provider-backed modpost on October 15, 2026 (Singapore): `module_completion_gate=PASSED_OFFLINE`. The 566/570 baseline/candidate raw undefined ELF symbols are normal module imports, **not unresolved modpost errors**. Candidate-only imports are `dev_open`, `dev_close`, `get_random_u32`, and the real `wonder_shim_13t` export `cnss_set_vendor_wonder_priv_data`.
+
+The stock consumer's **588 version records now all have actual captured-provider export crosschecks**. The additional 56 were checked against nine provider binaries, including two extracted privately from a read-only capture of the active vendor boot ramdisk. Only derived ABI metadata/hashes are included here; no private images, modules, or capture paths. CRC evidence does not prove loaded-memory identity, shared struct layouts, KCFI compatibility, or loadability.
+
+**The strict candidate is still diagnostic:** it combines the ten seed patches with **44 file-wide donor sync paths**, including unrelated changes. It is not an audited/minimal production patch series. Firmware compatibility, real provider binding and on-air bidirectional RF remain unproven. **Do not insert this candidate.** The new artifact-freeze tool archives the same-build shim, complete kernel config, checked provider tables and final-ELF metadata, rather than silently substituting an older shim. Debug-stripped diagnostic derivatives, when produced, are separately hashed and must preserve all allocated bytes/imports/versions; raw originals are retained.
 
 The optional Stage A KernelSU archive is a **probe-only file staging package**, not AirDrop. It does not autoload the probes. Wireless smoke outputs are diagnostics, not replacements for the loaded stock providers.
 

@@ -6,8 +6,8 @@
   "kernel_common_commit": "5a0ffb447c1dbd82e8e3af7a98c4a629f4b6d143",
   "qcom_integration_commit": "745702d5ed2c0435f2b1d3bb78bc4f48422d4191",
   "import_crc_count": 588,
-  "captured_provider_export_records": 532,
-  "source_verified_provider_records": 56,
+  "captured_provider_export_records": 588,
+  "source_verified_provider_records": 0,
   "provider_counts": {
     "vmlinux": 426,
     "cnss2": 63,
@@ -25,5 +25,7 @@
   "modinfo_depends": "cfg80211,cnss_prealloc,qcom_iommu_util,ipam,sched-walt,qcom_va_minidump,cnss_nl,cnss_utils,cnss2,rproc_qcom_common,qmi_helpers",
   "symvers_sha256": "4076858debaaf71d44a4b2af3335f8f405c8d797bb5481015a2e6813ae321190",
   "payload_base64_sha256": "ac09a5d07e4214a972e94edcdc05f787a3e3960d4e900b2ff2df75b8295f45ed",
-  "safety": "Derived metadata only. CRCs were parsed from the captured stock consumer module; provider identities/export classes are either captured exports or checked against pinned source. This profile is build input, never a byte patch to a .ko."
+  "safety": "Derived metadata only. All 588 consumer CRC rows crosschecked against actual captured provider exports, including 56 additional vendor-module exports on 2026-10-15. This does not prove loaded-memory identity, shared layouts, KCFI, runtime loadability or firmware/RF. Never byte-patch a module CRC.",
+  "additional_provider_evidence_file": "stock-qcacld-peach-v2.provider-evidence.json",
+  "additional_provider_evidence_sha256": "c7e01a010649835dd759b109502f37c34106cd2a6133b71be9556d9392361e12"
 }

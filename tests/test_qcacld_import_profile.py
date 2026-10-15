@@ -19,8 +19,8 @@ class QcacldImportProfileTests(unittest.TestCase):
         self.assertEqual(sum(meta['provider_counts'].values()),588)
         self.assertEqual([r for r in rows if r[1]=='module_layout'],
                          [['0x4e276f37','module_layout','vmlinux','EXPORT_SYMBOL','']])
-        self.assertEqual(meta['captured_provider_export_records'],532)
-        self.assertEqual(meta['source_verified_provider_records'],56)
+        self.assertEqual(meta['captured_provider_export_records'],588)
+        self.assertEqual(meta['source_verified_provider_records'],0)
 
     def test_output_is_derived_symvers_not_binary_patch(self):
         with tempfile.TemporaryDirectory() as td:
@@ -52,6 +52,22 @@ class QcacldImportProfileTests(unittest.TestCase):
             p=Path(td)/'meta.json'; p.write_text(json.dumps(meta))
             with patch.object(qip,'META',p), self.assertRaises(ValueError):
                 qip.load_profile()
+
+    def test_additional_actual_provider_evidence_tamper_fails_closed(self):
+        original=json.loads(qip.META.read_text())
+        source=qip.ROOT/'profiles'/original['additional_provider_evidence_file']
+        for mutation in ('hash','missing_symbol','wrong_provider','wrong_count'):
+            with self.subTest(mutation=mutation),tempfile.TemporaryDirectory() as td:
+                root=Path(td);(root/'profiles').mkdir();meta=dict(original)
+                evidence=json.loads(source.read_text())
+                if mutation=='missing_symbol':evidence['providers'][0]['symbols'].pop()
+                if mutation=='wrong_provider':evidence['providers'][0]['provider']='fake'
+                if mutation=='wrong_count':evidence['newly_captured_export_records']=55
+                raw=(json.dumps(evidence)+'\n').encode('utf-8')
+                ep=root/'profiles'/meta['additional_provider_evidence_file'];ep.write_bytes(raw)
+                if mutation!='hash':meta['additional_provider_evidence_sha256']=hashlib.sha256(raw).hexdigest()
+                mp=root/'meta.json';mp.write_text(json.dumps(meta))
+                with patch.object(qip,'ROOT',root),patch.object(qip,'META',mp),self.assertRaises(ValueError):qip.load_profile()
 
 if __name__=='__main__':
     unittest.main()

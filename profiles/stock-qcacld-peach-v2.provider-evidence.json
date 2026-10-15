@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "scope": "Additional actual provider export metadata for the 56 formerly source-only stock qcacld imports. No binary payloads or private capture paths.",
+  "captured_date": "2026-10-15",
+  "previously_captured_export_records": 532,
+  "newly_captured_export_records": 56,
+  "total_captured_export_records": 588,
+  "providers": [
+    {
+      "provider": "cnss_nl",
+      "module_sha256": "e1d2bd1f671dfd8b2a69c0dfb6ab20030a46de8eab37f76609fbf5c102cf6d2c",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 3,
+      "symbols": [
+        "cld80211_get_genl_family",
+        "deregister_cld_cmd_cb",
+        "register_cld_cmd_cb"
+      ]
+    },
+    {
+      "provider": "cnss_prealloc",
+      "module_sha256": "e8bc08e35e847aacf6253f1800723f14e6f1b35f963c87221a031728a33c6985",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 3,
+      "symbols": [
+        "wcnss_check_pool_lists",
+        "wcnss_prealloc_get",
+        "wcnss_prealloc_put"
+      ]
+    },
+    {
+      "provider": "cnss_utils",
+      "module_sha256": "73189fd0e803d104711d709259f16c585e5706e72f0bb86cb6379a5d8e8b4090",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 8,
+      "symbols": [
+        "cnss_utils_get_wlan_derived_mac_address",
+        "cnss_utils_get_wlan_mac_address",
+        "cnss_utils_get_wlan_unsafe_channel",
+        "cnss_utils_increment_driver_load_cnt",
+        "cnss_utils_set_wlan_unsafe_channel",
+        "cnss_utils_smem_mailbox_write",
+        "cnss_utils_wlan_get_dfs_nol",
+        "cnss_utils_wlan_set_dfs_nol"
+      ]
+    },
+    {
+      "provider": "ipam",
+      "module_sha256": "c9162e8a10f38ef5b55e97469500f81ad01e177313cc830660bee0369c0e9c72",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 27,
+      "symbols": [
+        "ipa_free_skb",
+        "ipa_get_lan_rx_napi",
+        "ipa_get_smmu_params",
+        "ipa_get_wdi_stats",
+        "ipa_is_ready",
+        "ipa_register_ipa_ready_cb",
+        "ipa_send_msg",
+        "ipa_setup_sys_pipe",
+        "ipa_wdi_cleanup_per_inst",
+        "ipa_wdi_conn_pipes_per_inst",
+        "ipa_wdi_create_smmu_mapping_per_inst",
+        "ipa_wdi_dereg_intf_per_inst",
+        "ipa_wdi_disable_pipes_per_inst",
+        "ipa_wdi_disconn_pipes_per_inst",
+        "ipa_wdi_enable_pipes_per_inst",
+        "ipa_wdi_get_capabilities",
+        "ipa_wdi_init_per_inst",
+        "ipa_wdi_opt_dpath_disable_clk_per_inst",
+        "ipa_wdi_opt_dpath_enable_clk_per_inst",
+        "ipa_wdi_opt_dpath_notify_ctrl_flt_rem_per_inst",
+        "ipa_wdi_opt_dpath_notify_flt_rlsd_per_inst",
+        "ipa_wdi_opt_dpath_notify_flt_rsvd_per_inst",
+        "ipa_wdi_opt_dpath_register_flt_cb_per_inst",
+        "ipa_wdi_opt_dpath_register_flt_cb_per_inst_v2",
+        "ipa_wdi_reg_intf_per_inst",
+        "ipa_wdi_release_smmu_mapping_per_inst",
+        "ipa_wdi_set_perf_profile_per_inst"
+      ]
+    },
+    {
+      "provider": "qcom_iommu_util",
+      "module_sha256": "b19157639f9ba786b498697904720489c0145854577512334e973f9391869135",
+      "evidence_kind": "captured_vendor_boot_member_exports",
+      "matched_import_count": 1,
+      "symbols": [
+        "qcom_iommu_get_mappings_configuration"
+      ]
+    },
+    {
+      "provider": "qcom_va_minidump",
+      "module_sha256": "f4dafd16a5bf323866b9eefdcdf488b5b9d03f45a11082fe56a711b5e950541e",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 3,
+      "symbols": [
+        "qcom_va_md_add_region",
+        "qcom_va_md_register",
+        "qcom_va_md_unregister"
+      ]
+    },
+    {
+      "provider": "qmi_helpers",
+      "module_sha256": "ce735163a733375c9bdca38fa702543f4bd2336525d68966a39e0ed7ceb85e63",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 8,
+      "symbols": [
+        "qmi_add_lookup",
+        "qmi_handle_init",
+        "qmi_handle_release",
+        "qmi_response_type_v01_ei",
+        "qmi_send_request",
+        "qmi_txn_cancel",
+        "qmi_txn_init",
+        "qmi_txn_wait"
+      ]
+    },
+    {
+      "provider": "rproc_qcom_common",
+      "module_sha256": "f0ef2e768bfb5d221ac9b26845f53baee13729c167207b36771fed8a3a1c7b3b",
+      "evidence_kind": "captured_provider_module_exports",
+      "matched_import_count": 2,
+      "symbols": [
+        "qcom_register_ssr_notifier",
+        "qcom_unregister_ssr_notifier"
+      ]
+    },
+    {
+      "provider": "sched-walt",
+      "module_sha256": "fa6ff1bb7b0079bb9beac672fe63603f48989d983dbb88f6953badfab128306a",
+      "evidence_kind": "captured_vendor_boot_member_exports",
+      "matched_import_count": 1,
+      "symbols": [
+        "walt_get_cpus_taken"
+      ]
+    }
+  ],
+  "running_memory_byte_identity_proven": false,
+  "runtime_layout_or_kcfi_compatibility_proven": false
+}

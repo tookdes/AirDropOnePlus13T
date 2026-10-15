@@ -9,7 +9,9 @@ on:
       - 'tools/prepare_qcacld_modpost.py'
       - 'tools/build_qcacld_kernel_crcs.py'
       - 'tools/qcacld_import_profile.py'
+      - 'tools/audit_qcacld_artifact.py'
       - 'profiles/stock-qcacld-peach-v2.imports*'
+      - 'profiles/stock-qcacld-peach-v2.provider-evidence.json'
       - 'profiles/qcacld-backport-kernel*'
       - 'patches/**'
       - '.github/workflows/stage-b-wlan-smoke.yml'
@@ -111,12 +113,39 @@ jobs:
           assert r['baseline']['strict_modpost'] and r['candidate']['strict_modpost']
           print('strict qcacld modpost provider closure passed; runtime/firmware gates remain closed')
           PY
+      - name: Freeze same-build shim, config, providers and final ELF metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/audit_qcacld_artifact.py \
+            --stage-a "$RUNNER_TEMP/stage-a" \
+            --providers "$RUNNER_TEMP/qcacld-providers" \
+            --smoke "$RUNNER_TEMP/wlan-smoke" \
+            --candidate-tree "$RUNNER_TEMP/candidate" \
+            --compiler "$RUNNER_TEMP/op13t-inputs/toolchain/clang-r510928/bin" \
+            --source-revision "$GITHUB_SHA" \
+            --out "$RUNNER_TEMP/qcacld-frozen"
+      - name: Preserve small same-build audit evidence (no qcacld debug payload)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: op13t-qcacld-audit-evidence
+          path: |
+            ${{ runner.temp }}/qcacld-frozen/manifest.json
+            ${{ runner.temp }}/qcacld-frozen/kernel
+            ${{ runner.temp }}/qcacld-frozen/providers
+            ${{ runner.temp }}/qcacld-frozen/reports
+            ${{ runner.temp }}/qcacld-frozen/modules/wonder_shim_13t.ko
+            ${{ runner.temp }}/qcacld-frozen/compact
+          retention-days: 14
+          if-no-files-found: error
       - name: Preserve reports, compile logs and diagnostic .ko even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: op13t-wlan-compile-smoke
           path: |
+            ${{ runner.temp }}/qcacld-frozen/**
             ${{ runner.temp }}/wlan-smoke/report.json
             ${{ runner.temp }}/wlan-smoke/baseline/build.log
             ${{ runner.temp }}/wlan-smoke/candidate/build.log
